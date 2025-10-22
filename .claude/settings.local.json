@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Bash(cat:*)",
+      "Bash(/Users/vamshi/MachineLearningProjects/ResumeCraft/backend/venv/bin/pip install streamlit)",
+      "Bash(/Users/vamshi/MachineLearningProjects/ResumeCraft/backend/venv/bin/streamlit run streamlit_app.py --server.headless=true)",
+      "Bash(curl:*)",
+      "Bash(/Users/vamshi/MachineLearningProjects/ResumeCraft/backend/venv/bin/pip install python-docx PyPDF2 pdfplumber)",
+      "Bash(/Users/vamshi/MachineLearningProjects/ResumeCraft/backend/venv/bin/python test_workflow.py:*)",
+      "Bash(pkill:*)",
+      "Bash(/Users/vamshi/MachineLearningProjects/ResumeCraft/backend/venv/bin/streamlit run streamlit_app_new.py --server.headless=true)",
+      "Bash(/Users/vamshi/MachineLearningProjects/ResumeCraft/backend/venv/bin/streamlit run streamlit_simple.py --server.headless=true)",
+      "Bash(/Users/vamshi/MachineLearningProjects/ResumeCraft/backend/venv/bin/streamlit run /Users/vamshi/MachineLearningProjects/ResumeCraft/backend/streamlit_simple.py --server.headless=true)",
+      "Bash(/Users/vamshi/MachineLearningProjects/ResumeCraft/backend/venv/bin/streamlit run /Users/vamshi/MachineLearningProjects/ResumeCraft/backend/app_template_formatter.py --server.headless=true --server.port 8502)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(/Users/vamshi/MachineLearningProjects/ResumeCraft/backend/venv/bin/python -c \"import sys; sys.path.insert(0, ''.''); from app.graphs import workflow\")",
+      "Bash(/Users/vamshi/MachineLearningProjects/ResumeCraft/backend/venv/bin/python:*)",
+      "Bash(if [ -f .env ])",
+      "Bash(then echo \"✅ .env file exists\")",
+      "Bash(else echo \"❌ .env file not found\")",
+      "Bash(fi)",
+      "Bash(/Users/vamshi/MachineLearningProjects/ResumeCraft/backend/venv/bin/pip:*)",
+      "Bash(/Users/vamshi/MachineLearningProjects/ResumeCraft/backend/venv/bin/streamlit run:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(./venv/bin/streamlit:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

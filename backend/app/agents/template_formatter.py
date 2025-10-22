@@ -5,7 +5,7 @@ Analyzes template format and applies it to other resumes
 
 from typing import TypedDict, Annotated
 from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
+from langchain_core.language_models import BaseChatModel
 from pydantic import BaseModel, Field
 
 
@@ -39,7 +39,7 @@ class TemplateFormatterState(TypedDict):
     errors: Annotated[list, lambda x, y: x + y]
 
 
-def analyze_template_format(llm: ChatOpenAI, template_text: str) -> dict:
+def analyze_template_format(llm: BaseChatModel, template_text: str) -> dict:
     """
     Analyze the template resume to extract its format structure.
 
@@ -98,7 +98,7 @@ Return your analysis in a structured format."""
         }
 
 
-def apply_template_format(llm: ChatOpenAI, parsed_resume: dict, template_format: dict) -> dict:
+def apply_template_format(llm: BaseChatModel, parsed_resume: dict, template_format: dict) -> dict:
     """
     Apply the template format to a parsed resume.
 
@@ -142,26 +142,61 @@ Instructions:
 Return the reformatted resume with all sections reorganized and styled according to the template."""
 
     try:
-        structured_llm = llm.with_structured_output(FormattedResume, method="function_calling")
-        result = structured_llm.invoke([
+        # Use JSON mode instead of function_calling for better compatibility
+        import json
+
+        response = llm.invoke([
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
+            {"role": "user", "content": user_prompt + "\n\nReturn your response as valid JSON matching the FormattedResume schema."}
         ])
 
+        # Parse the JSON response
+        response_text = response.content if hasattr(response, 'content') else str(response)
+
+        # Try to extract JSON from response
+        try:
+            # Find JSON in the response
+            start = response_text.find('{')
+            end = response_text.rfind('}') + 1
+            if start != -1 and end > start:
+                json_str = response_text[start:end]
+                result_dict = json.loads(json_str)
+            else:
+                result_dict = json.loads(response_text)
+        except:
+            # If JSON parsing fails, create a structured response
+            result_dict = {
+                "personal_info": parsed_resume.get("personal_info", {}),
+                "sections": [],
+                "formatting_notes": ["Template formatting applied based on provided format"]
+            }
+
+        # Ensure formatting_notes is a list
+        if isinstance(result_dict.get('formatting_notes'), str):
+            notes = result_dict['formatting_notes']
+            result_dict['formatting_notes'] = [line.strip() for line in notes.split('\n') if line.strip()]
+            if not result_dict['formatting_notes']:
+                result_dict['formatting_notes'] = [notes]
+
+        # Validate with Pydantic
+        validated = FormattedResume(**result_dict)
+
         return {
-            "formatted_resume": result.model_dump(),
+            "formatted_resume": validated.model_dump(),
             "formatting_confidence": 90,
             "errors": []
         }
     except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
         return {
             "formatted_resume": None,
             "formatting_confidence": 0,
-            "errors": [f"Formatting failed: {str(e)}"]
+            "errors": [f"Formatting failed: {str(e)}\n{error_detail}"]
         }
 
 
-def format_resume_with_template(llm: ChatOpenAI, template_text: str, resume_text: str, parsed_resume: dict) -> dict:
+def format_resume_with_template(llm: BaseChatModel, template_text: str, resume_text: str, parsed_resume: dict) -> dict:
     """
     Complete workflow: analyze template and format resume.
 

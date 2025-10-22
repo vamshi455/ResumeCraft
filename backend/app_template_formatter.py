@@ -16,7 +16,7 @@ import zipfile
 sys.path.insert(0, str(Path(__file__).parent))
 
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 
 from app.graphs.workflow import parse_resume_only
 from app.utils.file_processor import extract_text_from_file
@@ -318,8 +318,8 @@ if 'formatted_resumes' not in st.session_state:
 @st.cache_resource
 def get_llm(temperature=0.1):
     """Get cached LLM instance"""
-    return ChatOpenAI(
-        model="gpt-4-turbo-preview",
+    return ChatAnthropic(
+        model="claude-3-haiku-20240307",
         temperature=temperature,
     )
 
@@ -347,12 +347,13 @@ st.markdown('<div class="sub-header">Transform Any Resume to Match Your Perfect 
 # API STATUS CHECK
 # ============================================================================
 
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key or not api_key.startswith("sk-"):
+api_key = os.getenv("ANTHROPIC_API_KEY")
+if not api_key or api_key == "your-anthropic-api-key-here":
     st.markdown("""
         <div class="error-box">
             <strong>⚠️ API Key Missing</strong>
-            <p>Please set your OPENAI_API_KEY in the .env file to use this application.</p>
+            <p>Please set your ANTHROPIC_API_KEY in the .env file to use this application.</p>
+            <p style="margin-top: 1rem;">Get your API key from: <a href="https://console.anthropic.com/" target="_blank">https://console.anthropic.com/</a></p>
         </div>
     """, unsafe_allow_html=True)
     st.stop()
