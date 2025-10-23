@@ -405,6 +405,36 @@ with col1:
                     </div>
                 """, unsafe_allow_html=True)
 
+                # Template-specific instructions
+                st.markdown("---")
+                st.markdown("### 🎯 Template Formatting Instructions (Optional)")
+                st.markdown("""
+                    <div class="info-box">
+                        <strong>💡 Help the AI understand your template better!</strong><br>
+                        Describe specific formatting you want to match (section order, date format, bullet style, etc.)
+                    </div>
+                """, unsafe_allow_html=True)
+
+                template_instructions = st.text_area(
+                    "Describe what to match from the template:",
+                    value=st.session_state.get('template_instructions', ''),
+                    height=150,
+                    placeholder="""Example:
+- Use EXACTLY the same section order as template (Summary first, then Experience, Skills, Education)
+- Match the date format: "Jan 2020 - Dec 2022" style
+- Use bullet points starting with action verbs like in the template
+- Keep contact info at the top center
+- Use the same section header style (ALL CAPS with underline)
+- Match the job title format: "Title | Company | Location"
+                    """,
+                    help="The more specific you are, the better the AI will match your template",
+                    key="template_instructions_input"
+                )
+
+                if template_instructions:
+                    st.session_state.template_instructions = template_instructions
+                    st.success(f"✅ Custom instructions saved ({len(template_instructions)} characters)")
+
 with col2:
     if st.session_state.template_uploaded:
         st.markdown("""
@@ -578,11 +608,15 @@ if st.session_state.template_uploaded:
                     with log_container:
                         st.code("\n".join(processing_logs), language="text")
 
+                    # Get custom instructions from session state
+                    custom_instructions = st.session_state.get('template_instructions', None)
+
                     format_result = format_resume_with_template(
                         llm,
                         st.session_state.template_text,
                         resume_text,
-                        parse_result["parsed_resume"]
+                        parse_result["parsed_resume"],
+                        custom_instructions
                     )
 
                     if format_result.get("errors"):

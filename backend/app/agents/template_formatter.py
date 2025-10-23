@@ -39,42 +39,63 @@ class TemplateFormatterState(TypedDict):
     errors: Annotated[list, lambda x, y: x + y]
 
 
-def analyze_template_format(llm: BaseChatModel, template_text: str) -> dict:
+def analyze_template_format(llm: BaseChatModel, template_text: str, custom_instructions: str = None) -> dict:
     """
     Analyze the template resume to extract its format structure.
 
     Args:
         llm: Language model instance
         template_text: Text extracted from template resume
+        custom_instructions: Optional user-provided specific instructions
 
     Returns:
         Dictionary containing template format structure
     """
 
     system_prompt = """You are a resume format analyzer. Your job is to analyze a resume template
-    and extract its formatting structure, layout, and style patterns.
+    and extract its formatting structure, layout, and style patterns with EXTREME PRECISION.
 
     Focus on:
-    1. Section order and hierarchy
-    2. How information is organized
-    3. Date formats used
-    4. Bullet point styles
-    5. Contact information placement
-    6. Overall layout structure
+    1. EXACT section order and hierarchy
+    2. SPECIFIC ways information is organized
+    3. PRECISE date formats used (with examples)
+    4. DETAILED bullet point styles and patterns
+    5. EXACT contact information placement and format
+    6. COMPLETE layout structure details
 
-    Be detailed and precise in your analysis."""
+    Be extremely detailed and precise in your analysis. Pay attention to:
+    - Exact capitalization (ALL CAPS, Title Case, etc.)
+    - Punctuation patterns
+    - Spacing and separators
+    - Formatting conventions
+    - Section header styles"""
 
-    user_prompt = f"""Analyze this resume template and extract its format structure:
+    user_instructions = ""
+    if custom_instructions:
+        user_instructions = f"""
+
+CRITICAL USER INSTRUCTIONS - FOLLOW THESE EXACTLY:
+{custom_instructions}
+
+These instructions are MANDATORY. The template MUST be analyzed according to these specific requirements."""
+
+    user_prompt = f"""Analyze this resume template and extract its format structure with EXTREME PRECISION:
 
 {template_text}
+{user_instructions}
 
-Provide a detailed analysis of:
-1. The order of sections (Summary, Experience, Education, Skills, etc.)
-2. How each section is structured
-3. Date formatting patterns
-4. Bullet point styles
-5. Contact information layout
-6. Overall visual structure
+Provide an EXTREMELY detailed analysis of:
+1. The EXACT order of sections (include specific names as they appear)
+2. How each section is structured (with specific examples from template)
+3. Date formatting patterns (show EXACT examples: "Jan 2020", "01/2020", etc.)
+4. Bullet point styles (show exact patterns used)
+5. Contact information layout (exact format and placement)
+6. Overall visual structure (section headers, formatting, etc.)
+
+Be VERY SPECIFIC. For example:
+- Don't just say "dates are formatted", say "dates use format 'MMM YYYY - MMM YYYY' like 'Jan 2020 - Dec 2022'"
+- Don't just say "sections are ordered", list them: "1. PROFESSIONAL SUMMARY, 2. WORK EXPERIENCE, etc."
+- Include actual examples from the template whenever possible
 
 Return your analysis in a structured format."""
 
@@ -98,7 +119,7 @@ Return your analysis in a structured format."""
         }
 
 
-def apply_template_format(llm: BaseChatModel, parsed_resume: dict, template_format: dict) -> dict:
+def apply_template_format(llm: BaseChatModel, parsed_resume: dict, template_format: dict, custom_instructions: str = None) -> dict:
     """
     Apply the template format to a parsed resume.
 
@@ -106,38 +127,58 @@ def apply_template_format(llm: BaseChatModel, parsed_resume: dict, template_form
         llm: Language model instance
         parsed_resume: Parsed resume data
         template_format: Template format structure
+        custom_instructions: Optional user-provided specific instructions
 
     Returns:
         Dictionary containing formatted resume
     """
 
     system_prompt = """You are a resume formatter. Your job is to reformat a resume to match
-    a specific template format while preserving all the original content.
+    a specific template format while preserving all the original content with PERFECT ACCURACY.
 
-    Rules:
-    1. NEVER add, remove, or fabricate information
-    2. Reorganize sections to match template order
-    3. Reformat dates to match template style
-    4. Apply bullet point style from template
-    5. Preserve all achievements, skills, and experiences
-    6. Match the layout structure of the template
+    CRITICAL Rules:
+    1. NEVER EVER add, remove, or fabricate ANY information
+    2. Reorganize sections to EXACTLY match template order
+    3. Reformat dates to PRECISELY match template style
+    4. Apply the EXACT bullet point style from template
+    5. Preserve ALL achievements, skills, and experiences WORD-FOR-WORD
+    6. Match the EXACT layout structure of the template
+    7. Use the SAME section headers as they appear in template
+    8. Follow ALL capitalization, punctuation, and formatting conventions from template
 
-    Your goal is to make the resume look like it was written using the template."""
+    Your goal is to make the output look IDENTICAL in structure to the template, while containing
+    the candidate's actual information. Think of it as filling a template with new data."""
 
-    user_prompt = f"""Reformat this resume to match the template format:
+    user_instructions_text = ""
+    if custom_instructions:
+        user_instructions_text = f"""
 
-PARSED RESUME:
+CRITICAL USER-PROVIDED INSTRUCTIONS - THESE ARE MANDATORY:
+{custom_instructions}
+
+You MUST follow these instructions EXACTLY. They override any general formatting guidelines."""
+
+    user_prompt = f"""Reformat this resume to EXACTLY match the template format:
+
+PARSED RESUME (candidate's actual information):
 {parsed_resume}
 
-TEMPLATE FORMAT TO MATCH:
+TEMPLATE FORMAT TO MATCH PRECISELY:
 {template_format}
+{user_instructions_text}
 
-Instructions:
-1. Reorganize sections to match the template order: {template_format.get('sections_order', [])}
-2. Format dates using this pattern: {template_format.get('date_format', 'MM/YYYY')}
-3. Use this bullet style: {template_format.get('bullet_style', 'standard')}
-4. Place contact info: {template_format.get('contact_info_placement', 'top')}
-5. Match the layout: {template_format.get('layout', 'single-column')}
+MANDATORY Instructions:
+1. Reorganize sections in THIS EXACT ORDER: {template_format.get('sections_order', [])}
+2. Format dates EXACTLY like this: {template_format.get('date_format', 'MM/YYYY')}
+   - Look at the examples in the template format and match them precisely
+3. Use EXACTLY this bullet style: {template_format.get('bullet_style', 'standard')}
+4. Place contact info EXACTLY: {template_format.get('contact_info_placement', 'top')}
+5. Match layout PRECISELY: {template_format.get('layout', 'single-column')}
+6. Use section headers EXACTLY as specified in the template
+7. Follow ALL specific formatting details from the template format analysis
+
+IMPORTANT: The output should be the candidate's resume content structured EXACTLY like the template.
+Think of it as: Template Structure + Candidate Content = Perfect Match
 
 Return the reformatted resume with all sections reorganized and styled according to the template."""
 
@@ -196,7 +237,7 @@ Return the reformatted resume with all sections reorganized and styled according
         }
 
 
-def format_resume_with_template(llm: BaseChatModel, template_text: str, resume_text: str, parsed_resume: dict) -> dict:
+def format_resume_with_template(llm: BaseChatModel, template_text: str, resume_text: str, parsed_resume: dict, custom_instructions: str = None) -> dict:
     """
     Complete workflow: analyze template and format resume.
 
@@ -205,13 +246,14 @@ def format_resume_with_template(llm: BaseChatModel, template_text: str, resume_t
         template_text: Text from template resume
         resume_text: Text from resume to format
         parsed_resume: Already parsed resume data
+        custom_instructions: Optional user-provided instructions for template matching
 
     Returns:
         Dictionary containing formatted resume and metadata
     """
 
     # Step 1: Analyze template format
-    template_result = analyze_template_format(llm, template_text)
+    template_result = analyze_template_format(llm, template_text, custom_instructions)
 
     if template_result.get("errors"):
         return {
@@ -225,7 +267,8 @@ def format_resume_with_template(llm: BaseChatModel, template_text: str, resume_t
     format_result = apply_template_format(
         llm,
         parsed_resume,
-        template_result["template_format"]
+        template_result["template_format"],
+        custom_instructions
     )
 
     if format_result.get("errors"):
