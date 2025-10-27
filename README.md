@@ -16,6 +16,14 @@ ResumeCraft is an intelligent AI-powered platform that automatically reformats r
 - **Multi-Format Support**: PDF, DOCX, DOC, TXT input/output
 - **Bulk Download**: Download all formatted resumes as ZIP
 
+### 🎯 Entity Resolution & Candidate Matching ✨ NEW
+- **Two-Panel Interface**: Manage job positions and resume bank side-by-side
+- **Excel Resume Bank**: Upload and manage candidate database from Excel
+- **AI-Powered Matching**: Match candidates to IT job positions using Claude AI
+- **Detailed Analysis**: Get match scores, strengths, gaps, and hiring recommendations
+- **Batch Processing**: Process entire resume bank against job positions
+- **Export Results**: Download matching results as Excel for team review
+
 ### 🤖 AI-Powered Features
 - **🔍 Resume Parsing**: Extract structured data with 90%+ accuracy
 - **🎯 Candidate-Job Matching**: Intelligent matching with gap analysis
@@ -72,8 +80,14 @@ cp .env.example .env
 
 5. **Run the Streamlit application**
 
+**For Template-Based Resume Formatting:**
 ```bash
 streamlit run app_template_formatter.py
+```
+
+**For Entity Resolution & Candidate Matching:**
+```bash
+streamlit run app_entity_resolution.py
 ```
 
 The app will be available at `http://localhost:8501`
@@ -84,6 +98,7 @@ The app will be available at `http://localhost:8501`
 
 - **[User Guide](USER_GUIDE.md)** - Complete guide for end users
 - **[Technical Documentation](TECHNICAL.md)** - Architecture and development guide
+- **[Entity Resolution Guide](ENTITY_RESOLUTION_GUIDE.md)** - Guide for candidate-job matching ✨ NEW
 
 ---
 
