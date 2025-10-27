@@ -55,20 +55,28 @@ def analyze_template_format(llm: BaseChatModel, template_text: str, custom_instr
     system_prompt = """You are a resume format analyzer. Your job is to analyze a resume template
     and extract its formatting structure, layout, and style patterns with EXTREME PRECISION.
 
+    IMPORTANT: First determine the template type:
+    - SUMMARY/BRIEF: Short cover letter or submission format (e.g., highlights, key skills summary)
+    - FULL RESUME: Complete resume with detailed sections
+
     Focus on:
-    1. EXACT section order and hierarchy
-    2. SPECIFIC ways information is organized
-    3. PRECISE date formats used (with examples)
-    4. DETAILED bullet point styles and patterns
-    5. EXACT contact information placement and format
-    6. COMPLETE layout structure details
+    1. Template type (summary/brief vs full resume)
+    2. EXACT section order and hierarchy
+    3. SPECIFIC ways information is organized
+    4. PRECISE date formats used (with examples)
+    5. DETAILED bullet point styles and patterns
+    6. EXACT contact information placement and format
+    7. COMPLETE layout structure details
 
     Be extremely detailed and precise in your analysis. Pay attention to:
     - Exact capitalization (ALL CAPS, Title Case, etc.)
     - Punctuation patterns
     - Spacing and separators
     - Formatting conventions
-    - Section header styles"""
+    - Section header styles
+
+    WARNING: Note any example/placeholder content in template (names, companies, skills)
+    - these should NEVER be copied to output, only the structure/format matters"""
 
     user_instructions = ""
     if custom_instructions:
@@ -134,20 +142,23 @@ def apply_template_format(llm: BaseChatModel, parsed_resume: dict, template_form
     """
 
     system_prompt = """You are a resume formatter. Your job is to reformat a resume to match
-    a specific template format while preserving all the original content with PERFECT ACCURACY.
+    a specific template format while using ONLY the candidate's actual information.
 
-    CRITICAL Rules:
-    1. NEVER EVER add, remove, or fabricate ANY information
-    2. Reorganize sections to EXACTLY match template order
-    3. Reformat dates to PRECISELY match template style
-    4. Apply the EXACT bullet point style from template
-    5. Preserve ALL achievements, skills, and experiences WORD-FOR-WORD
-    6. Match the EXACT layout structure of the template
-    7. Use the SAME section headers as they appear in template
-    8. Follow ALL capitalization, punctuation, and formatting conventions from template
+    CRITICAL Rules - NEVER BREAK THESE:
+    1. NEVER EVER add, remove, fabricate, or hallucinate ANY information not in the original resume
+    2. NEVER invent skills, experiences, companies, dates, or achievements
+    3. NEVER copy content from the template - only use the candidate's actual data
+    4. If the template is a SUMMARY/BRIEF format: Extract only the most relevant highlights from candidate's resume
+    5. If the template is a FULL RESUME format: Reorganize all sections to match template order
+    6. ONLY use information that exists in the parsed resume data
+    7. If information doesn't exist in resume (e.g., no MBA, no specific skill), DO NOT add it
+    8. Match the template's structure and style, but fill it with the candidate's real data only
 
-    Your goal is to make the output look IDENTICAL in structure to the template, while containing
-    the candidate's actual information. Think of it as filling a template with new data."""
+    Template Types:
+    - SUMMARY/BRIEF: Short submission letter with highlights (preserve key points only)
+    - FULL RESUME: Complete resume with all sections (reorganize everything)
+
+    Your goal: Match template structure, use ONLY candidate's real information, NEVER hallucinate."""
 
     user_instructions_text = ""
     if custom_instructions:
@@ -158,29 +169,35 @@ CRITICAL USER-PROVIDED INSTRUCTIONS - THESE ARE MANDATORY:
 
 You MUST follow these instructions EXACTLY. They override any general formatting guidelines."""
 
-    user_prompt = f"""Reformat this resume to EXACTLY match the template format:
+    user_prompt = f"""Reformat this resume to match the template format using ONLY the candidate's real data:
 
-PARSED RESUME (candidate's actual information):
+PARSED RESUME (ONLY source of truth - use ONLY this data):
 {parsed_resume}
 
-TEMPLATE FORMAT TO MATCH PRECISELY:
+TEMPLATE FORMAT TO MATCH:
 {template_format}
 {user_instructions_text}
 
-MANDATORY Instructions:
-1. Reorganize sections in THIS EXACT ORDER: {template_format.get('sections_order', [])}
-2. Format dates EXACTLY like this: {template_format.get('date_format', 'MM/YYYY')}
-   - Look at the examples in the template format and match them precisely
-3. Use EXACTLY this bullet style: {template_format.get('bullet_style', 'standard')}
-4. Place contact info EXACTLY: {template_format.get('contact_info_placement', 'top')}
-5. Match layout PRECISELY: {template_format.get('layout', 'single-column')}
-6. Use section headers EXACTLY as specified in the template
-7. Follow ALL specific formatting details from the template format analysis
+CRITICAL ANTI-HALLUCINATION RULES:
+1. ONLY use information from the PARSED RESUME above
+2. If template shows "MBA" but candidate has "BS" - use BS (their actual degree)
+3. If template shows "20+ years SAP" but candidate has different skills - use their actual skills
+4. NEVER copy example content from template (names, companies, skills, dates)
+5. If template is a brief/summary format - extract key highlights from candidate's actual experience
+6. If candidate doesn't have something from template - LEAVE IT OUT, don't invent it
 
-IMPORTANT: The output should be the candidate's resume content structured EXACTLY like the template.
-Think of it as: Template Structure + Candidate Content = Perfect Match
+FORMATTING Instructions (structure only, not content):
+1. Section order: {template_format.get('sections_order', [])}
+2. Date format: {template_format.get('date_format', 'MM/YYYY')}
+3. Bullet style: {template_format.get('bullet_style', 'standard')}
+4. Contact info placement: {template_format.get('contact_info_placement', 'top')}
+5. Layout: {template_format.get('layout', 'single-column')}
 
-Return the reformatted resume with all sections reorganized and styled according to the template."""
+Formula: Template STRUCTURE (format/order) + Candidate's REAL DATA (from parsed resume only) = Output
+
+VERIFY before returning: Did I use any information NOT in the parsed resume? If yes, remove it!
+
+Return the reformatted resume using ONLY the candidate's actual information."""
 
     try:
         # Use JSON mode instead of function_calling for better compatibility
