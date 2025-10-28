@@ -343,154 +343,10 @@ elif st.session_state.current_page == 'formatter':
             st.rerun()
 
 elif st.session_state.current_page == 'entity':
-    # Entity Resolution Page - Embed the actual functionality
-
-    import pandas as pd
-    from datetime import datetime
-    import json
-    from io import BytesIO
-    import traceback
-    from langchain_anthropic import ChatAnthropic
-
-    # Add custom CSS for entity resolution
-    st.markdown("""
-    <style>
-        .section-container {
-            background: #ffffff;
-            border-radius: 12px;
-            padding: 2rem;
-            margin: 1rem 0;
-            border: 2px solid #e2e8f0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            height: 100%;
-        }
-
-        .section-header {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 3px solid #667eea;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .job-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin: 1rem 0;
-            color: white;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .job-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .job-card h3 {
-            margin: 0 0 0.5rem 0;
-            color: white;
-            font-weight: 700;
-        }
-
-        .job-card p {
-            margin: 0.25rem 0;
-            color: rgba(255, 255, 255, 0.95);
-            font-size: 0.95rem;
-        }
-
-        .candidate-card {
-            background: white;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 1.25rem;
-            margin: 0.75rem 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-
-        .candidate-card:hover {
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            transform: translateY(-2px);
-            border-color: #cbd5e1;
-        }
-
-        .metric-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 2rem;
-            border-radius: 12px;
-            color: white;
-            text-align: center;
-            margin: 0.5rem 0;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-
-        .metric-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 0.5rem 0;
-            color: white;
-        }
-
-        .metric-label {
-            font-size: 0.9rem;
-            opacity: 1;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .info-box {
-            padding: 1.5rem;
-            background: #dbeafe;
-            border-left: 6px solid #2563eb;
-            border-radius: 8px;
-            color: #1e3a8a;
-            margin: 1rem 0;
-            font-weight: 500;
-        }
-
-        .success-box {
-            padding: 1.5rem;
-            background: #d1fae5;
-            border-left: 6px solid #10b981;
-            border-radius: 8px;
-            color: #065f46;
-            margin: 1rem 0;
-            font-weight: 500;
-        }
-
-        .warning-box {
-            padding: 1.5rem;
-            background: #fef3c7;
-            border-left: 6px solid #f59e0b;
-            border-radius: 8px;
-            color: #78350f;
-            margin: 1rem 0;
-            font-weight: 500;
-        }
-
-        .error-box {
-            padding: 1.5rem;
-            background: #fee2e2;
-            border-left: 6px solid #dc2626;
-            border-radius: 8px;
-            color: #7f1d1d;
-            margin: 1rem 0;
-            font-weight: 500;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-
-    # Header
+    # Entity Resolution Page
     st.markdown("""
         <div style="text-align: center; padding: 2rem 0 1rem 0;">
-            <h1 style="font-size: 2.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            <h1 style="font-size: 2.5rem; background: linear-gradient(135deg, #059669 0%, #10b981 100%);
                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
                        background-clip: text; font-weight: 700;">
                 🎯 Entity Resolution & Candidate Matching
@@ -505,52 +361,118 @@ elif st.session_state.current_page == 'entity':
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key or api_key == "your-anthropic-api-key-here":
         st.markdown("""
-            <div class="error-box">
+            <div style="padding: 1.5rem; background: #fee2e2; border-left: 6px solid #dc2626;
+                        border-radius: 8px; color: #7f1d1d; margin: 2rem 0; font-weight: 500;">
                 <strong>⚠️ API Key Missing</strong>
                 <p>Please set your ANTHROPIC_API_KEY in the .env file to use this application.</p>
                 <p style="margin-top: 1rem;">Get your API key from: <a href="https://console.anthropic.com/" target="_blank">https://console.anthropic.com/</a></p>
             </div>
         """, unsafe_allow_html=True)
     else:
-        # Continue with the entity resolution app...
-        st.info("🔄 **Full Entity Resolution functionality is loading...**")
-
         st.markdown("""
-            The Entity Resolution system is available. Use the sidebar to navigate or run:
+            <div style="padding: 1.5rem; background: #dbeafe; border-left: 6px solid #2563eb;
+                        border-radius: 8px; color: #1e3a8a; margin: 2rem 0; font-weight: 500;">
+                <strong>🚀 Launch Entity Resolution</strong><br><br>
+                The Entity Resolution system runs as a standalone application for best performance.
+                Click the button below to open it in a new window.
+            </div>
+        """, unsafe_allow_html=True)
 
-            ```bash
-            streamlit run app_entity_resolution.py --server.port 8502
-            ```
-
-            **Features Available:**
-            - 💼 Job Position Management
-            - 👥 Resume Bank Upload (Excel)
-            - 🤖 AI-Powered Matching
-            - 📊 Detailed Match Analysis
-            - 📥 Export to Excel
-        """)
-
-        if st.button("🚀 Open Entity Resolution (New Tab)", use_container_width=True):
-            st.markdown("""
-                <script>
-                window.open('http://localhost:8502', '_blank');
-                </script>
-            """, unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("🚀 Open Entity Resolution (Standalone)", use_container_width=True, type="primary"):
+                st.markdown("""
+                    <script>
+                    window.open('http://localhost:8502', '_blank');
+                    </script>
+                """, unsafe_allow_html=True)
+                st.success("✅ Opening Entity Resolution in new window...")
+                st.info("If it doesn't open automatically, navigate to: **http://localhost:8502**")
 
         st.markdown("---")
 
-        st.markdown("### 📚 Quick Links")
+        # Run instructions
+        st.markdown("### 📋 How to Run Entity Resolution")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("""
+                **Option 1: Quick Launch**
+
+                Run this command in a new terminal:
+                ```bash
+                streamlit run app_entity_resolution.py --server.port 8502
+                ```
+
+                Then click the "Open Entity Resolution" button above.
+            """)
+
+        with col2:
+            st.markdown("""
+                **Option 2: From Project Root**
+
+                ```bash
+                cd backend
+                streamlit run app_entity_resolution.py \\
+                  --server.port 8502
+                ```
+
+                Access at: http://localhost:8502
+            """)
+
+        st.markdown("---")
+
+        # Features overview
+        st.markdown("### ✨ Features Available")
+
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.markdown("📖 [User Guide](https://github.com/vamshi455/ResumeCraft/blob/main/ENTITY_RESOLUTION_GUIDE.md)")
+            st.markdown("""
+                **💼 Job Management**
+                - Add job positions
+                - Define requirements
+                - Manage openings
+            """)
+
         with col2:
-            st.markdown("🎨 [Design Docs](https://github.com/vamshi455/ResumeCraft/blob/main/ENTITY_RESOLUTION_DESIGN.md)")
+            st.markdown("""
+                **👥 Resume Bank**
+                - Upload Excel database
+                - 20 sample candidates
+                - Multiple IT domains
+            """)
+
         with col3:
-            st.markdown("🚀 [Quick Start](https://github.com/vamshi455/ResumeCraft/blob/main/QUICK_START_ENTITY_RESOLUTION.md)")
+            st.markdown("""
+                **🤖 AI Matching**
+                - Intelligent scoring
+                - Detailed analysis
+                - Export results
+            """)
+
+        st.markdown("---")
+
+        # Quick links
+        st.markdown("### 📚 Documentation")
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.markdown("[📖 User Guide](https://github.com/vamshi455/ResumeCraft/blob/main/ENTITY_RESOLUTION_GUIDE.md)")
+        with col2:
+            st.markdown("[🎨 Design Docs](https://github.com/vamshi455/ResumeCraft/blob/main/ENTITY_RESOLUTION_DESIGN.md)")
+        with col3:
+            st.markdown("[🚀 Quick Start](https://github.com/vamshi455/ResumeCraft/blob/main/QUICK_START_ENTITY_RESOLUTION.md)")
+
+    if st.button("🔙 Back to Home", use_container_width=True):
+        st.session_state.current_page = 'home'
+        st.rerun()
 
 # ============================================================================
 # FOOTER
+# ============================================================================
+
 # ============================================================================
 
 st.markdown("---")
@@ -559,5 +481,3 @@ st.markdown("""
         <p style="margin: 0; font-size: 0.85rem;">
             Powered by Claude AI | Built with LangChain & Streamlit
         </p>
-    </div>
-""", unsafe_allow_html=True)
