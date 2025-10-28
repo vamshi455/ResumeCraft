@@ -80,14 +80,22 @@ cp .env.example .env
 
 5. **Run the Streamlit application**
 
-**For Template-Based Resume Formatting:**
+**🆕 Unified App with Navigation (Recommended):**
+```bash
+streamlit run app.py
+```
+✨ Access all features from one app with sidebar navigation!
+
+**Or run individual modules:**
+
+**Template-Based Resume Formatting:**
 ```bash
 streamlit run app_template_formatter.py
 ```
 
-**For Entity Resolution & Candidate Matching:**
+**Entity Resolution & Candidate Matching:**
 ```bash
-streamlit run app_entity_resolution.py
+streamlit run app_entity_resolution.py --server.port 8502
 ```
 
 The app will be available at `http://localhost:8501`
@@ -96,6 +104,7 @@ The app will be available at `http://localhost:8501`
 
 ## 📖 Documentation
 
+- **[Navigation Guide](NAVIGATION_GUIDE.md)** - How to use the unified app 🆕
 - **[User Guide](USER_GUIDE.md)** - Complete guide for end users
 - **[Technical Documentation](TECHNICAL.md)** - Architecture and development guide
 - **[Entity Resolution Guide](ENTITY_RESOLUTION_GUIDE.md)** - Guide for candidate-job matching ✨ NEW

@@ -65,7 +65,7 @@ st.markdown("""
     .main-header {
         text-align: center;
         padding: 2rem 0 1rem 0;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -98,26 +98,26 @@ st.markdown("""
         color: #0f172a;
         margin-bottom: 1.5rem;
         padding-bottom: 0.75rem;
-        border-bottom: 3px solid #667eea;
+        border-bottom: 3px solid #059669;
         display: flex;
         align-items: center;
         justify-content: space-between;
     }
 
     .job-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
         border-radius: 12px;
         padding: 1.5rem;
         margin: 1rem 0;
         color: white;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
         transition: all 0.3s ease;
         cursor: pointer;
     }
 
     .job-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 6px 20px rgba(30, 64, 175, 0.4);
     }
 
     .job-card h3 {
@@ -242,13 +242,13 @@ st.markdown("""
     }
 
     .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
         padding: 2rem;
         border-radius: 12px;
         color: white;
         text-align: center;
         margin: 0.5rem 0;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
     }
 
     .metric-value {
