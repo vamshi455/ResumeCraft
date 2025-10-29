@@ -11,12 +11,16 @@ python-multipart==0.0.6
 # LangChain & LLMs
 langchain==0.1.9
 langchain-openai==0.0.8
+langchain-anthropic==0.1.1
 langchain-core>=0.1.26,<0.2
 langchain-community==0.0.24
 langgraph==0.0.28
 
 # OpenAI
 openai==1.12.0
+
+# Anthropic Claude
+anthropic==0.18.0
 
 # Environment & Config
 python-dotenv==1.0.1
@@ -30,6 +34,11 @@ aiohttp==3.9.3
 
 # Data Processing
 pydantic-core==2.16.2
+pandas==2.2.0
+openpyxl==3.1.2
+
+# Streamlit UI
+streamlit==1.31.0
 
 # Database (Optional - for future persistence)
 sqlalchemy==2.0.27

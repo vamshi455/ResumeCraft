@@ -16,13 +16,23 @@ ResumeCraft is an intelligent AI-powered platform that automatically reformats r
 - **Multi-Format Support**: PDF, DOCX, DOC, TXT input/output
 - **Bulk Download**: Download all formatted resumes as ZIP
 
-### 🎯 Entity Resolution & Candidate Matching ✨ NEW
-- **Two-Panel Interface**: Manage job positions and resume bank side-by-side
-- **Excel Resume Bank**: Upload and manage candidate database from Excel
-- **AI-Powered Matching**: Match candidates to IT job positions using Claude AI
-- **Detailed Analysis**: Get match scores, strengths, gaps, and hiring recommendations
-- **Batch Processing**: Process entire resume bank against job positions
-- **Export Results**: Download matching results as Excel for team review
+### 🎯 Entity Resolution & Candidate Matching ✨ NEW (LangGraph Edition)
+- **LangGraph Multi-Agent Workflow**: Intelligent 4-stage workflow with specialized agents
+  - 🔍 **Job Analysis Agent** - Analyzes job requirements once for consistency
+  - 📄 **Candidate Parsing Agent** - Parses all resumes into structured format
+  - 🎯 **Matching Agent** - Matches each candidate against job requirements with detailed scoring
+  - 📊 **Ranking Agent** - Ranks and sorts candidates by match score
+- **Excel Resume Bank**: Upload and manage candidate database from Excel files
+- **Batch Processing**: Process entire resume bank against job positions efficiently
+- **Real-Time Workflow Tracking**: Visual progress through each workflow stage
+- **Detailed Match Analysis**:
+  - Overall match score (0-100) with recommendation level
+  - Detailed scores by category (Skills, Experience, Education, Soft Skills, Culture Fit)
+  - Strengths analysis with impact assessment
+  - Skills gap identification with severity levels
+  - Interview focus recommendations
+- **Professional Export**: Download matching results as multi-sheet Excel with detailed analysis
+- **Sample Data**: Built-in sample Excel generator for testing
 
 ### 🤖 AI-Powered Features
 - **🔍 Resume Parsing**: Extract structured data with 90%+ accuracy
@@ -93,12 +103,17 @@ streamlit run app.py
 streamlit run app_template_formatter.py
 ```
 
-**Entity Resolution & Candidate Matching:**
+**Entity Resolution & Candidate Matching (Simple Version):**
 ```bash
 streamlit run app_entity_resolution.py --server.port 8502
 ```
 
-The app will be available at `http://localhost:8501`
+**Entity Resolution & Candidate Matching (LangGraph Edition - Recommended):**
+```bash
+streamlit run app_entity_resolution_langgraph.py --server.port 8503
+```
+
+The app will be available at `http://localhost:8501` (or the specified port)
 
 ---
 
@@ -129,6 +144,8 @@ Download individual resumes or use bulk download to get all as a ZIP file.
 
 ## 🏗️ Architecture
 
+### Template Formatting Architecture
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Streamlit UI Layer                        │
@@ -158,6 +175,63 @@ Download individual resumes or use bulk download to get all as a ZIP file.
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### Entity Resolution Architecture (LangGraph)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  Streamlit UI Layer                          │
+│         (app_entity_resolution_langgraph.py)                 │
+│  ┌──────────────────┐       ┌──────────────────┐           │
+│  │  Job Positions   │       │   Resume Bank    │           │
+│  │   Management     │       │  (Excel Upload)  │           │
+│  └──────────────────┘       └──────────────────┘           │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
+│           Entity Resolution Workflow (LangGraph)             │
+│       (app/graphs/entity_resolution_workflow.py)             │
+│                                                              │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │ Stage 1: Job Analysis Agent                        │    │
+│  │ • Analyzes job requirements once                   │    │
+│  │ • Extracts required skills, experience, domain     │    │
+│  └──────────────────┬─────────────────────────────────┘    │
+│                     ▼                                        │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │ Stage 2: Candidate Parsing Agent                   │    │
+│  │ • Parses all candidate resumes                     │    │
+│  │ • Converts Excel data to structured format         │    │
+│  └──────────────────┬─────────────────────────────────┘    │
+│                     ▼                                        │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │ Stage 3: Matching Agent (Batch Processing)         │    │
+│  │ • Matches each candidate against job               │    │
+│  │ • Calculates detailed scores per category          │    │
+│  │ • Identifies strengths and gaps                    │    │
+│  └──────────────────┬─────────────────────────────────┘    │
+│                     ▼                                        │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │ Stage 4: Ranking Agent                             │    │
+│  │ • Ranks candidates by match score                  │    │
+│  │ • Generates final recommendations                  │    │
+│  └────────────────────────────────────────────────────┘    │
+│                                                              │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
+│              Excel Processor & Utilities                     │
+│           (app/utils/excel_processor.py)                     │
+│  • Excel validation & reading                               │
+│  • Candidate data transformation                            │
+│  • Multi-sheet export with detailed analysis                │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
+│                Claude AI (Anthropic)                         │
+│              claude-3-haiku-20240307                         │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ### Project Structure
 
 ```
@@ -169,24 +243,31 @@ ResumeCraft/
 │   │   │   ├── matcher.py       # Job matcher
 │   │   │   ├── enhancer.py      # Resume enhancer
 │   │   │   ├── template_formatter.py  # Template formatter
+│   │   │   ├── job_analyzer.py  # Job analyzer
 │   │   │   ├── qa.py            # Quality assurance
 │   │   │   └── supervisor.py    # Agent supervisor
 │   │   ├── graphs/              # LangGraph workflows
 │   │   │   ├── workflow.py      # Main workflows
+│   │   │   ├── entity_resolution_workflow.py  # Entity resolution workflow ✨ NEW
 │   │   │   └── state.py         # State definitions
 │   │   ├── prompts/             # LLM prompts
 │   │   │   ├── base.py          # Base prompts
+│   │   │   ├── matching.py      # Matching prompts
 │   │   │   ├── config.py        # LLM configuration
 │   │   │   └── examples.py      # Few-shot examples
 │   │   └── utils/               # Utilities
 │   │       ├── file_processor.py    # File handling
+│   │       ├── excel_processor.py   # Excel processing ✨ NEW
 │   │       └── document_generator.py # DOCX generation
-│   ├── app_template_formatter.py    # Main Streamlit app
+│   ├── app_template_formatter.py    # Template formatter Streamlit app
+│   ├── app_entity_resolution.py     # Entity resolution (simple)
+│   ├── app_entity_resolution_langgraph.py  # Entity resolution (LangGraph) ✨ NEW
 │   ├── streamlit_simple.py          # Alternative UI
 │   ├── requirements.txt             # Dependencies
 │   └── .env                         # Environment variables
 ├── TECHNICAL.md                 # Technical documentation
 ├── USER_GUIDE.md               # User documentation
+├── ENTITY_RESOLUTION_GUIDE.md  # Entity resolution guide
 └── README.md                   # This file
 ```
 
