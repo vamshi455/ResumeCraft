@@ -27,6 +27,11 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Clear old cache on load
+if 'app_version' not in st.session_state:
+    st.session_state.clear()
+    st.session_state.app_version = "2.0.0"
+
 # ============================================================================
 # CUSTOM CSS FOR NAVIGATION
 # ============================================================================
