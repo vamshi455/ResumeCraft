@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  resumecraft:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: resumecraft
+    ports:
+      - "8501:8501"  # Main app
+      - "8502:8502"  # Entity Resolution
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/uploads:/app/uploads
+      - ./backend/outputs:/app/outputs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  default:
+    name: resumecraft-network
