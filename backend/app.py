@@ -486,3 +486,5 @@ st.markdown("""
         <p style="margin: 0; font-size: 0.85rem;">
             Powered by Claude AI | Built with LangChain & Streamlit
         </p>
+    </div>
+""", unsafe_allow_html=True)
