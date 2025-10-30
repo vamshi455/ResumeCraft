@@ -31,7 +31,15 @@
       "Bash(/Users/vamshi/MachineLearningProjects/ResumeCraft/backend/venv/bin/streamlit run:*)",
       "Bash(lsof:*)",
       "Bash(xargs kill:*)",
-      "Bash(./venv/bin/streamlit:*)"
+      "Bash(./venv/bin/streamlit:*)",
+      "Bash(awk:*)",
+      "Bash(xargs:*)",
+      "Bash(git rm:*)",
+      "Bash(git pull:*)",
+      "Bash(mv:*)",
+      "Bash(git stash:*)",
+      "Bash(git stash pop:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []
