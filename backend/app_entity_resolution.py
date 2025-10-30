@@ -330,7 +330,103 @@ st.markdown("""
 if 'resume_bank' not in st.session_state:
     st.session_state.resume_bank = None
 if 'job_positions' not in st.session_state:
-    st.session_state.job_positions = []
+    # Default test job positions for easier testing
+    st.session_state.job_positions = [
+        {
+            "title": "Senior Python Developer",
+            "department": "Engineering",
+            "required_skills": ["Python", "Django", "REST API", "PostgreSQL", "Docker", "AWS", "Git"],
+            "experience_years": 5,
+            "location": "Bangalore",
+            "job_type": "Full-time",
+            "description": """We are seeking a Senior Python Developer to join our engineering team.
+
+Key Responsibilities:
+- Design and develop scalable backend services using Python and Django
+- Build and maintain REST APIs for our mobile and web applications
+- Work with PostgreSQL databases and optimize query performance
+- Deploy applications using Docker and AWS services
+- Collaborate with frontend developers and DevOps team
+- Mentor junior developers and participate in code reviews
+
+Required Skills:
+- 5+ years of experience with Python development
+- Strong expertise in Django framework and Django REST Framework
+- Proficiency in building RESTful APIs
+- Experience with PostgreSQL and database optimization
+- Knowledge of Docker containerization
+- Familiarity with AWS services (EC2, S3, RDS)
+- Version control with Git and GitHub
+
+Nice to Have:
+- Experience with microservices architecture
+- Knowledge of Redis, Celery for task queuing
+- CI/CD pipeline experience
+- Agile/Scrum methodology experience"""
+        },
+        {
+            "title": "Frontend React Developer",
+            "department": "Engineering",
+            "required_skills": ["React", "JavaScript", "TypeScript", "HTML", "CSS", "Redux", "Git"],
+            "experience_years": 3,
+            "location": "Hyderabad",
+            "job_type": "Full-time",
+            "description": """Join our team as a Frontend React Developer to build beautiful, responsive user interfaces.
+
+Key Responsibilities:
+- Develop modern web applications using React and TypeScript
+- Implement responsive designs and ensure cross-browser compatibility
+- Manage application state using Redux or Context API
+- Collaborate with UX designers to implement pixel-perfect designs
+- Optimize application performance and user experience
+- Write clean, maintainable code with proper documentation
+
+Required Skills:
+- 3+ years of React.js development experience
+- Strong proficiency in JavaScript and TypeScript
+- Experience with modern CSS frameworks (Tailwind, Material-UI)
+- Knowledge of Redux or other state management solutions
+- Understanding of RESTful API integration
+- Experience with Git version control
+
+Nice to Have:
+- Next.js or other React frameworks
+- Testing libraries (Jest, React Testing Library)
+- GraphQL experience
+- Mobile responsive design expertise"""
+        },
+        {
+            "title": "Data Scientist",
+            "department": "Data Science",
+            "required_skills": ["Python", "Machine Learning", "TensorFlow", "Pandas", "SQL", "Statistics"],
+            "experience_years": 4,
+            "location": "Remote",
+            "job_type": "Full-time",
+            "description": """We're looking for an experienced Data Scientist to help drive data-driven decision making.
+
+Key Responsibilities:
+- Build and deploy machine learning models for business problems
+- Analyze large datasets to extract actionable insights
+- Develop predictive models and recommendation systems
+- Collaborate with engineering teams to productionize models
+- Create visualizations and reports for stakeholders
+- Stay updated with latest ML/AI technologies and methodologies
+
+Required Skills:
+- 4+ years of experience in data science or ML engineering
+- Strong Python programming with libraries like Pandas, NumPy, Scikit-learn
+- Experience with deep learning frameworks (TensorFlow, PyTorch)
+- Proficiency in SQL and working with large databases
+- Strong statistical analysis and mathematics background
+- Experience with data visualization tools
+
+Nice to Have:
+- Experience with NLP or Computer Vision
+- Knowledge of big data technologies (Spark, Hadoop)
+- Cloud ML platforms (AWS SageMaker, Google AI Platform)
+- MLOps and model deployment experience"""
+        }
+    ]
 if 'matching_results' not in st.session_state:
     st.session_state.matching_results = []
 if 'selected_job' not in st.session_state:
