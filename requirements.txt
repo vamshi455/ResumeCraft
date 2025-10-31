@@ -1,0 +1,35 @@
+# ResumeCraft Streamlit Cloud Deployment Requirements
+# This file is for Streamlit Cloud deployment
+
+# Core Framework
+streamlit>=1.31.0
+
+# LangChain & AI (compatible with LangSmith Cloud)
+langchain>=0.3.0
+langchain-anthropic>=0.2.0
+langchain-core>=0.3.0
+langgraph>=0.2.0
+
+# Data Processing
+pandas>=2.2.0
+openpyxl>=3.1.2
+
+# File Processing
+python-docx>=1.1.0
+PyPDF2>=3.0.1
+pdfplumber>=0.10.3
+
+# Environment & Config
+python-dotenv>=1.0.1
+
+# HTTP Requests (for LangSmith API client)
+requests>=2.31.0
+
+# Logging
+loguru>=0.7.2
+
+# Utilities
+tiktoken>=0.6.0
+
+# LangSmith - Observability
+langsmith>=0.1.0
