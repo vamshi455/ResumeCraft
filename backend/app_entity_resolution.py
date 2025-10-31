@@ -19,8 +19,17 @@ sys.path.insert(0, str(Path(__file__).parent))
 from dotenv import load_dotenv
 from langchain_anthropic import ChatAnthropic
 
-# Load environment
+# Load environment (works locally)
 load_dotenv()
+
+# For Streamlit Cloud: Load secrets into environment
+if hasattr(st, 'secrets'):
+    try:
+        for key in st.secrets:
+            if key not in os.environ:
+                os.environ[key] = st.secrets[key]
+    except Exception as e:
+        pass  # Secrets not configured yet
 
 # Try to import LangSmith client
 try:
@@ -683,13 +692,36 @@ st.markdown('<div class="sub-header">Match IT Job Positions with Your Resume Ban
 
 api_key = os.getenv("ANTHROPIC_API_KEY")
 if not api_key or api_key == "your-anthropic-api-key-here":
-    st.markdown("""
-        <div class="error-box">
-            <strong>⚠️ API Key Missing</strong>
-            <p>Please set your ANTHROPIC_API_KEY in the .env file to use this application.</p>
-            <p style="margin-top: 1rem;">Get your API key from: <a href="https://console.anthropic.com/" target="_blank">https://console.anthropic.com/</a></p>
-        </div>
-    """, unsafe_allow_html=True)
+    # Check if running on Streamlit Cloud
+    is_streamlit_cloud = os.getenv("STREAMLIT_SHARING_MODE") or hasattr(st, 'secrets')
+
+    if is_streamlit_cloud:
+        st.markdown("""
+            <div class="error-box">
+                <strong>⚠️ Secrets Not Configured</strong>
+                <p>Please configure your secrets in Streamlit Cloud:</p>
+                <ol style="margin-top: 1rem; margin-left: 1.5rem;">
+                    <li>Click "⚙️ Settings" or "Manage app" in the bottom right</li>
+                    <li>Go to "Secrets" section</li>
+                    <li>Add your API keys (see example below)</li>
+                </ol>
+                <p style="margin-top: 1rem;"><strong>Required secrets:</strong></p>
+                <pre style="background: #f0f0f0; padding: 1rem; border-radius: 4px;">
+ANTHROPIC_API_KEY = "your-key-here"
+LANGSMITH_API_KEY = "lsv2_pt_your-key-here"
+LANGGRAPH_API_URL = "https://api.smith.langchain.com/deployments/028c1a44-1085-4888-b504-b5e0dbd1a949"
+                </pre>
+                <p style="margin-top: 1rem;">Get your Anthropic API key from: <a href="https://console.anthropic.com/" target="_blank">https://console.anthropic.com/</a></p>
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+            <div class="error-box">
+                <strong>⚠️ API Key Missing</strong>
+                <p>Please set your ANTHROPIC_API_KEY in the .env file to use this application.</p>
+                <p style="margin-top: 1rem;">Get your API key from: <a href="https://console.anthropic.com/" target="_blank">https://console.anthropic.com/</a></p>
+            </div>
+        """, unsafe_allow_html=True)
     st.stop()
 
 # ============================================================================
