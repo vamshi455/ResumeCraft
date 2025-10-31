@@ -13,20 +13,20 @@ This is **good news** - it means:
 - ✅ The API is running
 - ✅ It's secured and waiting for authenticated requests
 
-## Getting Your API Details
+## Your API Details
 
-1. **Go to LangSmith Dashboard**: https://smith.langchain.com/deployments
-2. **Find your deployment**: "resumecraft" or similar
-3. **Get these details**:
-   - **Deployment URL**: `https://api.smith.langchain.com/deployments/{deployment-id}`
-   - **API Key**: Your LangSmith API key (from Settings → API Keys)
+Your deployment is live! Here are your details:
+
+- **Deployment ID**: `028c1a44-1085-4888-b504-b5e0dbd1a949`
+- **Deployment URL**: `https://api.smith.langchain.com/deployments/028c1a44-1085-4888-b504-b5e0dbd1a949`
+- **API Key**: Get from LangSmith Dashboard → Settings → API Keys (starts with `lsv2_pt_`)
 
 ## Option 1: Test with cURL
 
 ```bash
-# Replace with your actual values
-DEPLOYMENT_URL="https://api.smith.langchain.com/deployments/YOUR-DEPLOYMENT-ID"
-LANGSMITH_API_KEY="lsv2_pt_your_api_key_here"
+# Your deployment URL (already filled in!)
+DEPLOYMENT_URL="https://api.smith.langchain.com/deployments/028c1a44-1085-4888-b504-b5e0dbd1a949"
+LANGSMITH_API_KEY="lsv2_pt_your_api_key_here"  # Replace with your actual key
 
 # Test the deployment
 curl -X POST "$DEPLOYMENT_URL/invoke" \
