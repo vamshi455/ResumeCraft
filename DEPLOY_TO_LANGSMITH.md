@@ -23,15 +23,15 @@ Your ResumeCraft workflow includes:
 
 ## Configuration Files Created
 
-✅ **langgraph.json** - LangGraph deployment configuration
+✅ **langgraph.json** - LangGraph deployment configuration (in repository root)
 ```json
 {
   "python_version": "3.12",
-  "dependencies": ["requirements_streamlit.txt"],
+  "dependencies": ["backend/requirements_streamlit.txt"],
   "graphs": {
-    "recruitment": "app.graphs.workflow:create_recruitment_workflow"
+    "recruitment": "backend.app.graphs.workflow:create_recruitment_workflow"
   },
-  "env": ".env"
+  "env": "backend/.env"
 }
 ```
 
@@ -68,8 +68,8 @@ Your ResumeCraft workflow includes:
    - Select branch: `main`
 
 3. **Configure Build**
-   - **Root directory**: `backend`
-   - **Config file**: `langgraph.json` (auto-detected)
+   - **Root directory**: Leave as repository root (default)
+   - **Config file**: `langgraph.json` (auto-detected in root)
    - **Python version**: 3.12 (from langgraph.json)
 
 ### Step 3: Configure Environment Variables (5 minutes)
