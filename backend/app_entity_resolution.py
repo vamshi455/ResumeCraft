@@ -22,6 +22,14 @@ from langchain_anthropic import ChatAnthropic
 # Load environment
 load_dotenv()
 
+# Try to import LangSmith client
+try:
+    from app.services.langsmith_client import get_langsmith_client, check_langsmith_config
+    LANGSMITH_AVAILABLE = True
+except ImportError:
+    LANGSMITH_AVAILABLE = False
+    print("LangSmith client not available, will use local workflow")
+
 # ============================================================================
 # PAGE CONFIG
 # ============================================================================
@@ -444,6 +452,17 @@ def get_llm(temperature=0.1):
         temperature=temperature,
     )
 
+@st.cache_resource
+def get_langsmith_client_cached():
+    """Get cached LangSmith client if available"""
+    if not LANGSMITH_AVAILABLE:
+        return None
+    try:
+        return get_langsmith_client()
+    except Exception as e:
+        st.warning(f"Could not initialize LangSmith client: {str(e)}")
+        return None
+
 def get_match_score_class(score):
     """Get CSS class based on match score"""
     if score >= 85:
@@ -506,9 +525,64 @@ Education: {candidate.get('education', 'N/A')}
 Location: {candidate.get('location', 'N/A')}
 """
 
+def match_candidate_to_job_langsmith(langsmith_client, candidate, job):
+    """
+    Match candidate to job using deployed LangSmith workflow
+
+    Args:
+        langsmith_client: LangSmith client instance
+        candidate: Candidate dictionary
+        job: Job position dictionary
+
+    Returns:
+        Match result dictionary with score and analysis
+    """
+    try:
+        job_desc = prepare_job_description(job)
+        candidate_desc = prepare_candidate_description(candidate)
+
+        # Call deployed workflow
+        result = langsmith_client.invoke(
+            resume_text=candidate_desc,
+            job_description=job_desc
+        )
+
+        # Extract output
+        output = langsmith_client.get_output(result)
+
+        # Transform to expected format
+        match_score = output.get("match_score", 0)
+        match_result = output.get("match_result", {})
+
+        return {
+            "match_score": match_score,
+            "match_level": "Excellent Match" if match_score >= 85 else
+                          "Good Match" if match_score >= 70 else
+                          "Fair Match" if match_score >= 50 else "Poor Match",
+            "strengths": match_result.get("strengths", []),
+            "gaps": match_result.get("gaps", []),
+            "skill_match_percentage": match_result.get("skill_match_percentage", match_score),
+            "experience_assessment": match_result.get("experience_assessment", ""),
+            "recommendation": match_result.get("recommendation", "review"),
+            "reasoning": output.get("final_recommendation", "")
+        }
+    except Exception as e:
+        st.error(f"LangSmith API error: {str(e)}")
+        # Return a default error response
+        return {
+            "match_score": 0,
+            "match_level": "Error",
+            "strengths": [],
+            "gaps": ["API Error"],
+            "skill_match_percentage": 0,
+            "experience_assessment": f"Error: {str(e)}",
+            "recommendation": "error",
+            "reasoning": f"Failed to process: {str(e)}"
+        }
+
 def match_candidate_to_job_simple(llm, candidate, job):
     """
-    Simple matching using Claude AI to analyze candidate-job fit
+    Simple matching using Claude AI to analyze candidate-job fit (Local fallback)
 
     Args:
         llm: Language model instance
@@ -855,7 +929,16 @@ if st.session_state.selected_job and st.session_state.resume_bank is not None:
         progress_bar = st.progress(0)
         status_text = st.empty()
 
-        llm = get_llm(temperature=0.1)
+        # Try to use LangSmith, fallback to local
+        langsmith_client = get_langsmith_client_cached()
+        use_langsmith = langsmith_client is not None
+
+        if use_langsmith:
+            st.info("🚀 Using deployed LangSmith workflow for matching")
+        else:
+            st.info("💻 Using local AI workflow for matching")
+            llm = get_llm(temperature=0.1)
+
         matches = []
 
         for idx, row in df.iterrows():
@@ -865,14 +948,22 @@ if st.session_state.selected_job and st.session_state.resume_bank is not None:
 
             try:
                 candidate = row.to_dict()
-                result = match_candidate_to_job_simple(llm, candidate, job)
 
-                if result["success"]:
-                    match_info = result["match_data"]
+                # Use LangSmith if available, otherwise local
+                if use_langsmith:
+                    result = match_candidate_to_job_langsmith(langsmith_client, candidate, job)
+                    # LangSmith returns direct match data
+                    match_info = result
                     match_info["candidate"] = candidate
                     matches.append(match_info)
                 else:
-                    st.warning(f"⚠️ Failed to match {row.get('name', 'Unknown')}: {result['error']}")
+                    result = match_candidate_to_job_simple(llm, candidate, job)
+                    if result["success"]:
+                        match_info = result["match_data"]
+                        match_info["candidate"] = candidate
+                        matches.append(match_info)
+                    else:
+                        st.warning(f"⚠️ Failed to match {row.get('name', 'Unknown')}: {result['error']}")
 
             except Exception as e:
                 st.error(f"❌ Error matching {row.get('name', 'Unknown')}: {str(e)}")
