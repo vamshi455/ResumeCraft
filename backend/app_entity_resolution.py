@@ -1,6 +1,7 @@
 """
-ResumeCraft - Entity Resolution & Candidate-Job Matching
-Match IT job positions with candidates from your resume bank
+MHK Tech Inc - AI Recruitment Platform
+Entity Resolution & Candidate-Job Matching
+Match IT job positions with candidates from your resume bank using advanced AI
 """
 
 import streamlit as st
@@ -44,7 +45,7 @@ except ImportError:
 # ============================================================================
 
 st.set_page_config(
-    page_title="ResumeCraft - Entity Resolution",
+    page_title="MHK Tech Inc - AI Recruitment Platform",
     page_icon="🎯",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -66,8 +67,39 @@ st.markdown("""
     footer {visibility: hidden;}
 
     .main {
-        background: linear-gradient(135deg, #f0f4f8 0%, #e8eef5 100%);
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         padding: 0;
+    }
+
+    .mhk-logo-container {
+        text-align: center;
+        padding: 1.5rem 0;
+        background: white;
+        border-bottom: 2px solid #e9ecef;
+        margin-bottom: 2rem;
+    }
+
+    .mhk-logo {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1e1e1e;
+        letter-spacing: 0.1em;
+        margin-bottom: 0.25rem;
+    }
+
+    .mhk-tagline {
+        font-size: 0.9rem;
+        color: #6c757d;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+    }
+
+    .mhk-icon {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        margin-right: 1rem;
+        vertical-align: middle;
     }
 
     .block-container {
@@ -82,11 +114,11 @@ st.markdown("""
     .main-header {
         text-align: center;
         padding: 2rem 0 1rem 0;
-        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        background: linear-gradient(135deg, #5e60ce 0%, #6930c3 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-        font-size: 3rem;
+        font-size: 2.5rem;
         font-weight: 700;
         margin-bottom: 0.5rem;
     }
@@ -115,26 +147,26 @@ st.markdown("""
         color: #0f172a;
         margin-bottom: 1.5rem;
         padding-bottom: 0.75rem;
-        border-bottom: 3px solid #059669;
+        border-bottom: 3px solid #5e60ce;
         display: flex;
         align-items: center;
         justify-content: space-between;
     }
 
     .job-card {
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        background: linear-gradient(135deg, #5e60ce 0%, #6930c3 100%);
         border-radius: 12px;
         padding: 1.5rem;
         margin: 1rem 0;
         color: white;
-        box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+        box-shadow: 0 4px 12px rgba(94, 96, 206, 0.3);
         transition: all 0.3s ease;
         cursor: pointer;
     }
 
     .job-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 6px 20px rgba(30, 64, 175, 0.4);
+        box-shadow: 0 6px 20px rgba(94, 96, 206, 0.4);
     }
 
     .job-card h3 {
@@ -259,13 +291,13 @@ st.markdown("""
     }
 
     .metric-card {
-        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        background: linear-gradient(135deg, #5e60ce 0%, #6930c3 100%);
         padding: 2rem;
         border-radius: 12px;
         color: white;
         text-align: center;
         margin: 0.5rem 0;
-        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        box-shadow: 0 4px 12px rgba(94, 96, 206, 0.3);
     }
 
     .metric-value {
@@ -283,7 +315,7 @@ st.markdown("""
     }
 
     .stButton>button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #5e60ce 0%, #6930c3 100%);
         color: white;
         border: none;
         padding: 0.75rem 2rem;
@@ -291,16 +323,16 @@ st.markdown("""
         font-weight: 700;
         font-size: 1rem;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 12px rgba(94, 96, 206, 0.3);
     }
 
     .stButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 6px 16px rgba(94, 96, 206, 0.4);
     }
 
     .stProgress > div > div > div > div {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #5e60ce 0%, #6930c3 100%);
     }
 
     /* Dataframe styling */
@@ -683,7 +715,17 @@ Provide ONLY the JSON response, no additional text."""
 # MAIN HEADER
 # ============================================================================
 
-st.markdown('<div class="main-header">🎯 Entity Resolution & Candidate Matching</div>', unsafe_allow_html=True)
+# MHK Tech Inc Logo Header
+st.markdown('''
+<div class="mhk-logo-container">
+    <div class="mhk-logo">
+        <span style="color: #5e60ce;">M</span><span style="color: #6930c3;">H</span><span style="color: #ff6b35;">K</span> TECH INC
+    </div>
+    <div class="mhk-tagline">AI-Powered Recruitment Platform</div>
+</div>
+''', unsafe_allow_html=True)
+
+st.markdown('<div class="main-header">🎯 Candidate Matching System</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-header">Match IT Job Positions with Your Resume Bank Using AI</div>', unsafe_allow_html=True)
 
 # ============================================================================
@@ -1168,8 +1210,10 @@ else:
 st.markdown("---")
 st.markdown("""
     <div style="text-align: center; color: #64748b; padding: 2rem 0;">
-        <p style="margin: 0; font-size: 1rem; font-weight: 600;">ResumeCraft - Entity Resolution</p>
-        <p style="margin: 0.5rem 0; font-size: 0.9rem;">AI-Powered Candidate-Job Matching System</p>
+        <p style="margin: 0; font-size: 1rem; font-weight: 600;">
+            <span style="color: #5e60ce;">M</span><span style="color: #6930c3;">H</span><span style="color: #ff6b35;">K</span> TECH INC
+        </p>
+        <p style="margin: 0.5rem 0; font-size: 0.9rem;">AI-Powered Recruitment Platform</p>
         <p style="margin: 0; font-size: 0.85rem;">Powered by Claude AI | Built with LangChain & Streamlit</p>
     </div>
 """, unsafe_allow_html=True)
