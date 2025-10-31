@@ -28,3 +28,7 @@ loguru==0.7.2
 
 # Utilities
 tiktoken==0.6.0
+
+# LangSmith - Observability & Deployment
+langsmith>=0.1.0
+langgraph-cli>=0.1.0

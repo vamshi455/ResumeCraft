@@ -1,0 +1,11 @@
+{
+  "python_version": "3.12",
+  "dependencies": [
+    "requirements_streamlit.txt"
+  ],
+  "graphs": {
+    "recruitment": "app.graphs.workflow:create_recruitment_workflow"
+  },
+  "env": ".env",
+  "dockerfile_lines": []
+}
