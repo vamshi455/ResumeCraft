@@ -19,12 +19,25 @@ JOB REQUIREMENTS:
 {job_json}
 ```
 
-MATCHING CRITERIA:
-1. Required skills match (40% weight)
-2. Experience relevance (30% weight)
-3. Education fit (10% weight)
-4. Soft skills alignment (10% weight)
-5. Culture fit indicators (10% weight)
+MATCHING RULES (from config):
+{matching_rules}
+
+MATCHING CRITERIA (WEIGHTED):
+1. Technical Skills Match (30% weight) - Required vs preferred skills
+2. Experience Relevance (25% weight) - Years and role fit
+3. Location Compatibility (20% weight) - Remote/Hybrid/Onsite alignment
+4. Education Fit (10% weight) - Degree and field of study
+5. Soft Skills (8% weight) - Communication, leadership, teamwork
+6. Culture Fit (7% weight) - Work style and values alignment
+
+⚠️ CRITICAL: Location Compatibility Rules
+- Remote job + Remote candidate = 100/100 (Perfect match)
+- Remote job + Onsite candidate = 85/100 (Good - candidate may adjust)
+- Onsite job + Remote candidate = 30/100 (Poor - major mismatch)
+- Onsite job + Hybrid candidate = 60/100 (Weak - candidate may struggle)
+- Hybrid = Mix of both, score accordingly
+- Flexible = Can accommodate any preference (100/100)
+- If candidate "Willing to Relocate" = Add +20 bonus to location score
 
 OUTPUT SCHEMA (JSON):
 {{
@@ -38,7 +51,7 @@ OUTPUT SCHEMA (JSON):
   "detailed_scores": {{
     "skills": {{
       "score": 0-100,
-      "weight": 0.40,
+      "weight": 0.30,
       "required_matched": [
         {{
           "skill": "Python",
@@ -54,7 +67,7 @@ OUTPUT SCHEMA (JSON):
 
     "experience": {{
       "score": 0-100,
-      "weight": 0.30,
+      "weight": 0.25,
       "years_match": {{
         "candidate": 5.5,
         "required": 5,
@@ -70,6 +83,17 @@ OUTPUT SCHEMA (JSON):
       ]
     }},
 
+    "location": {{
+      "score": 0-100,
+      "weight": 0.20,
+      "job_location": "Remote | Hybrid | Onsite | Flexible",
+      "candidate_preference": "Remote | Hybrid | Onsite | Flexible",
+      "willing_to_relocate": true | false,
+      "compatibility": "excellent | good | moderate | poor",
+      "reasoning": "Explanation of location score",
+      "geographic_match": "same_city | same_state | same_country | international"
+    }},
+
     "education": {{
       "score": 0-100,
       "weight": 0.10,
@@ -78,13 +102,13 @@ OUTPUT SCHEMA (JSON):
 
     "soft_skills": {{
       "score": 0-100,
-      "weight": 0.10,
+      "weight": 0.08,
       "matched": ["Leadership", "Communication"]
     }},
 
     "culture_fit": {{
       "score": 0-100,
-      "weight": 0.10,
+      "weight": 0.07,
       "indicators": ["Startup experience", "Autonomous work style"]
     }}
   }},

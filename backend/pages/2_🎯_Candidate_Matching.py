@@ -431,7 +431,7 @@ def get_match_level_text(score):
         return "Poor Match"
 
 def create_job_position_dict(title, department, required_skills, experience_years,
-                            location, job_type, description):
+                            location, job_type, description, location_type="Remote"):
     """Create a structured job position dictionary"""
     return {
         "id": f"job_{datetime.now().timestamp()}",
@@ -440,6 +440,7 @@ def create_job_position_dict(title, department, required_skills, experience_year
         "required_skills": [skill.strip() for skill in required_skills.split(",")],
         "experience_years": experience_years,
         "location": location,
+        "location_type": location_type,
         "job_type": job_type,
         "description": description,
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -453,6 +454,7 @@ Job Title: {job["title"]}
 Department: {job["department"]}
 Required Experience: {job["experience_years"]} years
 Location: {job["location"]}
+Location Type: {job.get("location_type", "Remote")} (Remote/Hybrid/Onsite/Flexible)
 Job Type: {job["job_type"]}
 Required Skills: {skills_text}
 Description: {job["description"]}
@@ -467,7 +469,9 @@ Experience: {candidate.get('exp_years', 'N/A')} years
 Domain: {candidate.get('domain', 'N/A')}
 Previous Roles: {candidate.get('previous_roles', 'N/A')}
 Education: {candidate.get('education', 'N/A')}
-Location: {candidate.get('location', 'N/A')}
+Current Location: {candidate.get('location', 'N/A')}
+Location Preference: {candidate.get('location_preference', 'Flexible')} (Remote/Hybrid/Onsite/Flexible)
+Willing to Relocate: {candidate.get('willing_to_relocate', 'Unknown')}
 """
 
 def match_candidate_to_job_langsmith(langsmith_client, candidate, job):
@@ -690,12 +694,19 @@ with col_left:
             job_title = st.text_input("Job Title*", placeholder="e.g., Senior Python Developer")
             job_dept = st.text_input("Department*", placeholder="e.g., Engineering")
 
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             with col1:
                 job_exp = st.number_input("Experience (years)*", min_value=0, max_value=30, value=3)
-                job_location = st.text_input("Location*", placeholder="e.g., Remote, NYC")
             with col2:
                 job_type = st.selectbox("Job Type*", ["Full-time", "Part-time", "Contract", "Internship"])
+            with col3:
+                job_location_type = st.selectbox(
+                    "Work Location*",
+                    ["Remote", "Hybrid", "Onsite", "Flexible"],
+                    help="Remote: 100% remote | Hybrid: Mix of remote/office | Onsite: Full-time office | Flexible: Open to any"
+                )
+
+            job_location = st.text_input("City/Region*", placeholder="e.g., San Francisco, CA or Remote - USA")
 
             job_skills = st.text_area(
                 "Required Skills* (comma-separated)",
@@ -715,10 +726,10 @@ with col_left:
                 if all([job_title, job_dept, job_skills, job_desc, job_location]):
                     new_job = create_job_position_dict(
                         job_title, job_dept, job_skills, job_exp,
-                        job_location, job_type, job_desc
+                        job_location, job_type, job_desc, job_location_type
                     )
                     st.session_state.job_positions.append(new_job)
-                    st.success(f"✅ Added: {job_title}")
+                    st.success(f"✅ Added: {job_title} ({job_location_type})")
                     st.rerun()
                 else:
                     st.error("❌ Please fill all required fields")
@@ -730,7 +741,11 @@ with col_left:
         for idx, job in enumerate(st.session_state.job_positions):
             st.markdown(f'<div class="job-card">', unsafe_allow_html=True)
             st.markdown(f"### {job['title']}")
-            st.markdown(f"**{job['department']}** | {job['location']} | {job['job_type']}")
+
+            # Display location type icon
+            location_icon = {"Remote": "🏠", "Hybrid": "🔄", "Onsite": "🏢", "Flexible": "✨"}.get(job.get('location_type', 'Remote'), "📍")
+
+            st.markdown(f"**{job['department']}** | {location_icon} {job.get('location_type', 'Remote')} ({job['location']}) | {job['job_type']}")
             st.markdown(f"**Experience:** {job['experience_years']}+ years")
             st.markdown(f"**Skills:** {', '.join(job['required_skills'][:5])}" +
                        (f" +{len(job['required_skills'])-5} more" if len(job['required_skills']) > 5 else ""))
@@ -776,7 +791,9 @@ with col_right:
             • <strong>domain</strong> - Domain expertise (e.g., Web Development, Data Science)<br>
             • <strong>previous_roles</strong> (optional) - Previous job titles<br>
             • <strong>education</strong> (optional) - Education background<br>
-            • <strong>location</strong> (optional) - Current location
+            • <strong>location</strong> (optional) - Current location<br>
+            • <strong>location_preference</strong> (optional) - Remote/Hybrid/Onsite/Flexible<br>
+            • <strong>willing_to_relocate</strong> (optional) - Yes/No
         </div>
     """, unsafe_allow_html=True)
 

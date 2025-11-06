@@ -1,0 +1,274 @@
+{
+  "version": "1.0",
+  "last_updated": "2025-01-06",
+  "matching_weights": {
+    "skills": {
+      "weight": 0.30,
+      "description": "Technical skills match percentage"
+    },
+    "experience": {
+      "weight": 0.25,
+      "description": "Years of experience and role relevance"
+    },
+    "location": {
+      "weight": 0.20,
+      "description": "Location compatibility (Remote/Hybrid/Onsite)"
+    },
+    "education": {
+      "weight": 0.10,
+      "description": "Educational background fit"
+    },
+    "soft_skills": {
+      "weight": 0.08,
+      "description": "Communication, leadership, teamwork"
+    },
+    "culture_fit": {
+      "weight": 0.07,
+      "description": "Company culture and work style alignment"
+    }
+  },
+  "location_rules": {
+    "compatibility_matrix": {
+      "description": "Compatibility scores for different location combinations",
+      "rules": [
+        {
+          "job_location": "Remote",
+          "candidate_preference": "Remote",
+          "score": 100,
+          "reasoning": "Perfect match - both prefer remote work"
+        },
+        {
+          "job_location": "Remote",
+          "candidate_preference": "Hybrid",
+          "score": 95,
+          "reasoning": "Excellent match - candidate open to remote"
+        },
+        {
+          "job_location": "Remote",
+          "candidate_preference": "Onsite",
+          "score": 85,
+          "reasoning": "Good match - candidate may adjust to remote"
+        },
+        {
+          "job_location": "Remote",
+          "candidate_preference": "Flexible",
+          "score": 100,
+          "reasoning": "Perfect match - candidate fully flexible"
+        },
+        {
+          "job_location": "Hybrid",
+          "candidate_preference": "Remote",
+          "score": 70,
+          "reasoning": "Moderate match - candidate prefers remote but job requires some onsite"
+        },
+        {
+          "job_location": "Hybrid",
+          "candidate_preference": "Hybrid",
+          "score": 100,
+          "reasoning": "Perfect match - both prefer hybrid"
+        },
+        {
+          "job_location": "Hybrid",
+          "candidate_preference": "Onsite",
+          "score": 90,
+          "reasoning": "Excellent match - candidate comfortable with onsite"
+        },
+        {
+          "job_location": "Hybrid",
+          "candidate_preference": "Flexible",
+          "score": 100,
+          "reasoning": "Perfect match - candidate fully flexible"
+        },
+        {
+          "job_location": "Onsite",
+          "candidate_preference": "Remote",
+          "score": 30,
+          "reasoning": "Poor match - significant location mismatch, consider only if exceptional candidate"
+        },
+        {
+          "job_location": "Onsite",
+          "candidate_preference": "Hybrid",
+          "score": 60,
+          "reasoning": "Weak match - candidate may not be comfortable with full onsite"
+        },
+        {
+          "job_location": "Onsite",
+          "candidate_preference": "Onsite",
+          "score": 100,
+          "reasoning": "Perfect match - both prefer onsite"
+        },
+        {
+          "job_location": "Onsite",
+          "candidate_preference": "Flexible",
+          "score": 100,
+          "reasoning": "Perfect match - candidate fully flexible"
+        },
+        {
+          "job_location": "Flexible",
+          "candidate_preference": "Remote",
+          "score": 100,
+          "reasoning": "Perfect match - job offers flexibility"
+        },
+        {
+          "job_location": "Flexible",
+          "candidate_preference": "Hybrid",
+          "score": 100,
+          "reasoning": "Perfect match - job offers flexibility"
+        },
+        {
+          "job_location": "Flexible",
+          "candidate_preference": "Onsite",
+          "score": 100,
+          "reasoning": "Perfect match - job offers flexibility"
+        },
+        {
+          "job_location": "Flexible",
+          "candidate_preference": "Flexible",
+          "score": 100,
+          "reasoning": "Perfect match - full flexibility on both sides"
+        }
+      ]
+    },
+    "geographic_distance": {
+      "enabled": true,
+      "description": "Score adjustment based on geographic proximity",
+      "rules": [
+        {
+          "condition": "same_city",
+          "bonus": 10,
+          "reasoning": "Candidate in same city - easy commute"
+        },
+        {
+          "condition": "same_state",
+          "bonus": 5,
+          "reasoning": "Candidate in same state - reasonable commute"
+        },
+        {
+          "condition": "same_country",
+          "bonus": 0,
+          "reasoning": "Candidate in same country - relocation possible"
+        },
+        {
+          "condition": "international",
+          "penalty": -10,
+          "reasoning": "International candidate - visa/relocation complexity"
+        }
+      ]
+    },
+    "relocation": {
+      "enabled": true,
+      "description": "Handle candidates willing to relocate",
+      "rules": {
+        "willing_to_relocate": {
+          "score_boost": 20,
+          "reasoning": "Candidate open to relocation offsets location mismatch"
+        },
+        "not_willing_to_relocate": {
+          "score_penalty": 0,
+          "reasoning": "No penalty if location already matches"
+        }
+      }
+    }
+  },
+  "experience_rules": {
+    "underqualified": {
+      "threshold": -2,
+      "penalty": -20,
+      "reasoning": "Candidate has 2+ years less than required"
+    },
+    "slightly_underqualified": {
+      "threshold": -1,
+      "penalty": -10,
+      "reasoning": "Candidate has 1 year less than required"
+    },
+    "meets_requirement": {
+      "threshold": 0,
+      "score": 100,
+      "reasoning": "Candidate meets experience requirement"
+    },
+    "exceeds_requirement": {
+      "threshold": 2,
+      "bonus": 10,
+      "reasoning": "Candidate has 2+ years more than required"
+    },
+    "overqualified": {
+      "threshold": 5,
+      "penalty": -5,
+      "reasoning": "Candidate significantly overqualified - may not stay long"
+    }
+  },
+  "skills_rules": {
+    "required_skills": {
+      "weight": 0.70,
+      "description": "Must-have skills are critical"
+    },
+    "preferred_skills": {
+      "weight": 0.30,
+      "description": "Nice-to-have skills add value"
+    },
+    "minimum_required_match": {
+      "threshold": 0.60,
+      "reasoning": "Candidate must have at least 60% of required skills"
+    }
+  },
+  "scoring_thresholds": {
+    "excellent": {
+      "min_score": 85,
+      "max_score": 100,
+      "recommendation": "STRONG HIRE",
+      "action": "Schedule interview immediately"
+    },
+    "strong": {
+      "min_score": 75,
+      "max_score": 84,
+      "recommendation": "RECOMMENDED",
+      "action": "Consider for interview"
+    },
+    "good": {
+      "min_score": 65,
+      "max_score": 74,
+      "recommendation": "CONSIDER",
+      "action": "Review with hiring manager"
+    },
+    "moderate": {
+      "min_score": 50,
+      "max_score": 64,
+      "recommendation": "WEAK MATCH",
+      "action": "Consider only if no better candidates"
+    },
+    "poor": {
+      "min_score": 0,
+      "max_score": 49,
+      "recommendation": "NOT RECOMMENDED",
+      "action": "Reject or consider for different role"
+    }
+  },
+  "filters": {
+    "auto_reject_rules": {
+      "enabled": true,
+      "rules": [
+        {
+          "condition": "location_score < 30 AND not_willing_to_relocate",
+          "action": "auto_reject",
+          "reasoning": "Location incompatibility with no relocation option"
+        },
+        {
+          "condition": "skills_match < 40",
+          "action": "auto_reject",
+          "reasoning": "Insufficient technical skills for role"
+        },
+        {
+          "condition": "experience_gap > 3 AND role_is_senior",
+          "action": "flag_for_review",
+          "reasoning": "Significant experience gap for senior role"
+        }
+      ]
+    }
+  },
+  "admin_settings": {
+    "allow_rule_override": true,
+    "require_approval_for_changes": false,
+    "audit_log_enabled": true,
+    "default_timezone": "UTC"
+  }
+}
