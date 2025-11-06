@@ -38,6 +38,13 @@ try:
 except ImportError:
     LANGSMITH_AVAILABLE = False
 
+# Import rules engine
+try:
+    from app.utils.rules_engine import get_rules_engine
+    RULES_ENGINE_AVAILABLE = True
+except ImportError:
+    RULES_ENGINE_AVAILABLE = False
+
 # ============================================================================
 # PAGE CONFIG
 # ============================================================================
@@ -478,11 +485,26 @@ Willing to Relocate: {candidate.get('willing_to_relocate', 'Unknown')}
 """
 
 def match_candidate_to_job_simple(llm, candidate, job):
-    """Simple local matching without LangSmith"""
-    from langchain_core.messages import HumanMessage, SystemMessage
+    """Enhanced matching with rules engine integration"""
+    from langchain_core.messages import HumanMessage
 
+    # Get rules engine for proper scoring
+    if RULES_ENGINE_AVAILABLE:
+        rules_engine = get_rules_engine()
+        weights = rules_engine.get_matching_weights()
+    else:
+        weights = {
+            "skills": 0.30,
+            "experience": 0.25,
+            "location": 0.20,
+            "education": 0.10,
+            "soft_skills": 0.08,
+            "culture_fit": 0.07
+        }
+
+    # Ask AI to score each component
     prompt = f"""
-You are an expert recruiter. Match this candidate to the job and provide a detailed analysis.
+You are an expert recruiter. Analyze this candidate against the job requirements and score each component.
 
 CANDIDATE:
 {prepare_candidate_description(candidate)}
@@ -490,29 +512,121 @@ CANDIDATE:
 JOB:
 {prepare_job_description(job)}
 
-Provide match score (0-100) and detailed analysis as JSON:
+SCORING WEIGHTS:
+- Technical Skills: {weights['skills']:.0%}
+- Experience: {weights['experience']:.0%}
+- Location: {weights['location']:.0%}
+- Education: {weights['education']:.0%}
+- Soft Skills: {weights['soft_skills']:.0%}
+- Culture Fit: {weights['culture_fit']:.0%}
+
+Return ONLY valid JSON with component scores:
 {{
-  "match_score": 85,
-  "recommendation": "STRONG HIRE",
-  "strengths": ["skill1", "skill2"],
-  "gaps": ["gap1"],
-  "reasoning": "Brief explanation"
+  "skills_score": 0-100,
+  "experience_score": 0-100,
+  "education_score": 0-100,
+  "soft_skills_score": 0-100,
+  "culture_fit_score": 0-100,
+  "strengths": ["strength1", "strength2", "strength3"],
+  "gaps": ["gap1", "gap2"],
+  "reasoning": "Brief explanation of the match"
 }}
+
+Note: Do NOT include location_score - it will be calculated using rules engine.
 """
 
     messages = [HumanMessage(content=prompt)]
     response = llm.invoke(messages)
 
     try:
-        result = json.loads(response.content)
-        return result
-    except:
+        ai_result = json.loads(response.content)
+
+        # Get location compatibility score from rules engine
+        job_location = job.get('location_type', 'Remote')
+        candidate_pref = candidate.get('location_preference', 'Flexible')
+        willing_relocate = str(candidate.get('willing_to_relocate', 'No')).lower() in ['yes', 'true', '1']
+
+        if RULES_ENGINE_AVAILABLE:
+            location_score, location_reasoning = rules_engine.get_location_compatibility_score(
+                job_location, candidate_pref, willing_relocate
+            )
+        else:
+            # Fallback location scoring
+            if job_location == candidate_pref or candidate_pref == 'Flexible' or job_location == 'Flexible':
+                location_score = 100
+            elif job_location == 'Onsite' and candidate_pref == 'Remote' and not willing_relocate:
+                location_score = 30
+            elif job_location == 'Remote' and candidate_pref == 'Onsite':
+                location_score = 85
+            elif job_location == 'Hybrid' and candidate_pref == 'Remote' and not willing_relocate:
+                location_score = 60
+            else:
+                location_score = 70
+            location_reasoning = f"Job: {job_location}, Candidate: {candidate_pref}"
+
+        # Calculate weighted overall score WITH location
+        component_scores = {
+            "skills": ai_result.get("skills_score", 50),
+            "experience": ai_result.get("experience_score", 50),
+            "location": location_score,
+            "education": ai_result.get("education_score", 50),
+            "soft_skills": ai_result.get("soft_skills_score", 50),
+            "culture_fit": ai_result.get("culture_fit_score", 50)
+        }
+
+        if RULES_ENGINE_AVAILABLE:
+            overall_score = rules_engine.calculate_weighted_score(component_scores)
+        else:
+            overall_score = sum(component_scores[k] * weights[k] for k in component_scores.keys())
+
+        # Calculate score WITHOUT location (what it would be if location was perfect)
+        component_scores_no_location = component_scores.copy()
+        component_scores_no_location["location"] = 100  # Perfect location match
+
+        if RULES_ENGINE_AVAILABLE:
+            score_without_location = rules_engine.calculate_weighted_score(component_scores_no_location)
+        else:
+            score_without_location = sum(component_scores_no_location[k] * weights[k] for k in component_scores_no_location.keys())
+
+        # Get recommendation
+        if RULES_ENGINE_AVAILABLE:
+            rec_info = rules_engine.get_recommendation(overall_score)
+            recommendation = rec_info['recommendation']
+        else:
+            if overall_score >= 85:
+                recommendation = "STRONG HIRE"
+            elif overall_score >= 75:
+                recommendation = "RECOMMENDED"
+            elif overall_score >= 65:
+                recommendation = "CONSIDER"
+            elif overall_score >= 50:
+                recommendation = "WEAK MATCH"
+            else:
+                recommendation = "NOT RECOMMENDED"
+
+        return {
+            "match_score": round(overall_score, 1),
+            "score_without_location": round(score_without_location, 1),
+            "location_score": location_score,
+            "location_reasoning": location_reasoning,
+            "component_scores": component_scores,
+            "recommendation": recommendation,
+            "strengths": ai_result.get("strengths", []),
+            "gaps": ai_result.get("gaps", []),
+            "reasoning": ai_result.get("reasoning", "")
+        }
+    except Exception as e:
+        st.error(f"Matching error: {str(e)}")
         return {
             "match_score": 50,
+            "score_without_location": 50,
+            "location_score": 50,
+            "location_reasoning": "Error in scoring",
+            "component_scores": {},
             "recommendation": "REVIEW REQUIRED",
-            "strengths": ["Unable to parse response"],
+            "strengths": ["Unable to parse AI response"],
             "gaps": [],
-            "reasoning": "Error in matching process"
+            "reasoning": f"Error: {str(e)}"
         }
 
 # ============================================================================
@@ -753,9 +867,9 @@ if st.session_state.selected_job and st.session_state.resume_bank is not None:
                     <strong>⚠️ Location Compatibility Warning</strong><br>
                     These candidates have <strong>location preference mismatch</strong> with the job requirements:<br>
                     • Job requires: <strong>{job_location_type}</strong><br>
-                    • These candidates prefer different work arrangements<br>
-                    • Skills may be strong, but location could be a deal-breaker<br>
-                    • Consider only if exceptional and willing to negotiate
+                    • <strong>Actual score</strong> reflects location penalty (20% of total score)<br>
+                    • <strong>Potential score</strong> shows what they'd score if location was perfect<br>
+                    • Consider only if exceptional and willing to negotiate work arrangements
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -768,6 +882,8 @@ if st.session_state.selected_job and st.session_state.resume_bank is not None:
                             result = poor_location_matches[i + j]
                             candidate = result.get('candidate', {})
                             score = result.get('match_score', 0)
+                            score_without_location = result.get('score_without_location', score)
+                            location_score = result.get('location_score', 0)
                             recommendation = result.get('recommendation', 'REVIEW')
                             strengths = result.get('strengths', [])
                             gaps = result.get('gaps', [])
@@ -779,11 +895,21 @@ if st.session_state.selected_job and st.session_state.resume_bank is not None:
                             score_class = "score-poor"
                             rec_class = "rec-reject"
 
+                            # Get potential score color
+                            potential_score_class = get_match_score_class(score_without_location)
+
                             with col:
                                 st.markdown(f'''
                                 <div class="match-card-grid" style="border: 2px solid #dc2626; opacity: 0.85;">
-                                    <div class="match-score-badge {score_class}" style="background: #dc2626;">{score}
-                                        <div style="font-size: 0.6rem; margin-top: 0.25rem;">⚠️ LOC</div>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                                        <div class="match-score-badge {score_class}" style="background: #dc2626; font-size: 1.2rem;">
+                                            {score}
+                                            <div style="font-size: 0.55rem; margin-top: 0.2rem;">ACTUAL</div>
+                                        </div>
+                                        <div class="match-score-badge {potential_score_class}" style="font-size: 1rem; padding: 0.4rem 0.6rem;">
+                                            {score_without_location}
+                                            <div style="font-size: 0.55rem; margin-top: 0.2rem;">POTENTIAL</div>
+                                        </div>
                                     </div>
 
                                     <div class="candidate-name">{candidate.get('name', 'Unknown')}</div>
@@ -796,9 +922,9 @@ if st.session_state.selected_job and st.session_state.resume_bank is not None:
                                         <span class="location-badge">{candidate.get('location', 'N/A')}</span>
                                     </div>
 
-                                    <div style="background: #fee2e2; padding: 0.5rem; border-radius: 4px; border-left: 3px solid #dc2626; margin: 0.5rem 0; font-size: 0.8rem;">
-                                        <strong>🚫 Location Mismatch:</strong><br>
-                                        Job needs <strong>{job_location_type}</strong>, candidate wants <strong>{candidate_pref}</strong>
+                                    <div style="background: #fee2e2; padding: 0.5rem; border-radius: 4px; border-left: 3px solid #dc2626; margin: 0.5rem 0; font-size: 0.75rem;">
+                                        <strong>🚫 Location Penalty: -{round((100 - location_score) * 0.20, 1)} pts</strong><br>
+                                        Job needs <strong>{job_location_type}</strong>, wants <strong>{candidate_pref}</strong>
                                         {f'<br>✅ Willing to relocate' if willing_relocate else '<br>❌ Not willing to relocate'}
                                     </div>
 
