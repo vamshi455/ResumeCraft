@@ -441,7 +441,8 @@ def get_recommendation_class(recommendation):
         return "rec-reject"
 
 def create_job_position_dict(title, department, required_skills, experience_years,
-                            location, job_type, description, location_type="Remote"):
+                            location, job_type, description, location_type="Remote",
+                            sponsorship_policy="full_sponsorship"):
     """Create a structured job position dictionary"""
     return {
         "id": f"job_{datetime.now().timestamp()}",
@@ -453,6 +454,7 @@ def create_job_position_dict(title, department, required_skills, experience_year
         "location_type": location_type,
         "job_type": job_type,
         "description": description,
+        "sponsorship_policy": sponsorship_policy,
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
@@ -482,6 +484,7 @@ Education: {candidate.get('education', 'N/A')}
 Current Location: {candidate.get('location', 'N/A')}
 Location Preference: {candidate.get('location_preference', 'Flexible')}
 Willing to Relocate: {candidate.get('willing_to_relocate', 'Unknown')}
+Work Authorization: {candidate.get('work_authorization', 'Not Specified')}
 """
 
 def match_candidate_to_job_simple(llm, candidate, job):
@@ -702,16 +705,30 @@ with col_left:
 
     # Compact Add Job Form
     with st.expander("➕ Add New Position", expanded=len(st.session_state.job_positions) == 0):
-        with st.form("add_job", clear_on_submit=False):  # Changed to False to prevent clearing on error
+        with st.form("add_job", clear_on_submit=False):
             col1, col2 = st.columns(2)
             with col1:
                 job_title = st.text_input("Title*", placeholder="Senior Python Developer")
                 job_dept = st.text_input("Department*", placeholder="Engineering")
                 job_exp = st.number_input("Experience (yrs)*", 0, 30, 3)
             with col2:
-                job_type = st.selectbox("Job Type*", ["Full-time", "Part-time", "Contract"])
+                job_type = st.selectbox("Job Type*", ["Full-time", "Part-time", "Contract", "Internship"])
                 job_location_type = st.selectbox("Work Type*", ["Remote", "Hybrid", "Onsite", "Flexible"])
                 job_location = st.text_input("City/Region*", placeholder="San Francisco, CA")
+
+            # Work Authorization (NEW)
+            st.markdown('<div style="background: #e0f2fe; padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0;"><strong>🛂 Work Authorization Policy*</strong></div>', unsafe_allow_html=True)
+            job_sponsorship = st.selectbox(
+                "Sponsorship Policy",
+                ["full_sponsorship", "h1b_transfer", "no_sponsorship", "citizen_gc_only"],
+                format_func=lambda x: {
+                    "full_sponsorship": "✅ Full Sponsorship (All visa types accepted)",
+                    "h1b_transfer": "🔄 H1B Transfer Only (No new sponsorship)",
+                    "no_sponsorship": "🚫 No Sponsorship (US Citizen/GC/EAD only)",
+                    "citizen_gc_only": "🇺🇸 US Citizen/Green Card Only (Security clearance)"
+                }[x],
+                help="Determines which candidates are eligible based on work authorization"
+            )
 
             job_skills = st.text_area("Required Skills* (comma-separated)",
                                      placeholder="Python, Django, PostgreSQL", height=60)
@@ -733,7 +750,7 @@ with col_left:
                 else:
                     new_job = create_job_position_dict(
                         job_title, job_dept, job_skills, job_exp,
-                        job_location, job_type, job_desc, job_location_type
+                        job_location, job_type, job_desc, job_location_type, job_sponsorship
                     )
                     st.session_state.job_positions.append(new_job)
                     st.success(f"✅ Added: {job_title}")
