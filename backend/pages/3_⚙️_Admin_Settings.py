@@ -257,74 +257,77 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # ============================================================================
 
 with tab1:
-    st.markdown('<div class="section-header">Matching Criteria Weights</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">Matching Criteria Weights (v2.0)</div>', unsafe_allow_html=True)
 
     st.markdown("""
         <div class="info-box">
-            <strong>ℹ️ About Matching Weights</strong><br>
+            <strong>ℹ️ About Matching Weights (Updated Algorithm)</strong><br>
             These weights determine how much each factor contributes to the overall match score.
-            Total must equal 100%. Adjust based on your hiring priorities.
+            Total must equal 100%. Adjust based on your hiring priorities.<br><br>
+            <strong>⚠️ Note:</strong> Location & Work Authorization are DEAL BREAKERS - candidates who don't pass these are automatically excluded.
         </div>
     """, unsafe_allow_html=True)
+
+    weights = rules["matching_weights"]
+    new_weights = {}
+
+    st.subheader("Matching Criteria (SKILLS-BASED SCORING)")
+    st.caption("These factors are scored ONLY for candidates who pass deal-breaker filters")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("Current Weights")
+        # Check if new weight structure exists
+        if "job_title_match" in weights:
+            job_title_weight = st.slider(
+                "🎯 Job Title Match (HIGHEST PRIORITY)",
+                0.0, 1.0, float(weights["job_title_match"]["weight"]),
+                0.01,
+                help=weights["job_title_match"]["description"]
+            )
+            new_weights["job_title_match"] = job_title_weight
 
-        weights = rules["matching_weights"]
-        new_weights = {}
-
-        skills_weight = st.slider(
-            "🔧 Technical Skills",
-            0.0, 1.0, float(weights["skills"]["weight"]),
-            0.01,
-            help=weights["skills"]["description"]
-        )
-        new_weights["skills"] = skills_weight
-
-        experience_weight = st.slider(
-            "💼 Experience",
-            0.0, 1.0, float(weights["experience"]["weight"]),
-            0.01,
-            help=weights["experience"]["description"]
-        )
-        new_weights["experience"] = experience_weight
-
-        location_weight = st.slider(
-            "📍 Location Compatibility",
-            0.0, 1.0, float(weights["location"]["weight"]),
-            0.01,
-            help=weights["location"]["description"]
-        )
-        new_weights["location"] = location_weight
+            skills_weight = st.slider(
+                "🔧 Technical Skills",
+                0.0, 1.0, float(weights["skills"]["weight"]),
+                0.01,
+                help=weights["skills"]["description"]
+            )
+            new_weights["skills"] = skills_weight
+        else:
+            # Fallback for old structure
+            st.warning("⚠️ Old weight structure detected. Please update matching_rules.json")
+            skills_weight = st.slider(
+                "🔧 Technical Skills",
+                0.0, 1.0, 0.30,
+                0.01
+            )
+            new_weights["skills"] = skills_weight
 
     with col2:
-        st.subheader("Additional Factors")
+        if "profile_description_match" in weights:
+            experience_weight = st.slider(
+                "💼 Experience",
+                0.0, 1.0, float(weights["experience"]["weight"]),
+                0.01,
+                help=weights["experience"]["description"]
+            )
+            new_weights["experience"] = experience_weight
 
-        education_weight = st.slider(
-            "🎓 Education",
-            0.0, 1.0, float(weights["education"]["weight"]),
-            0.01,
-            help=weights["education"]["description"]
-        )
-        new_weights["education"] = education_weight
-
-        soft_skills_weight = st.slider(
-            "💬 Soft Skills",
-            0.0, 1.0, float(weights["soft_skills"]["weight"]),
-            0.01,
-            help=weights["soft_skills"]["description"]
-        )
-        new_weights["soft_skills"] = soft_skills_weight
-
-        culture_weight = st.slider(
-            "🏢 Culture Fit",
-            0.0, 1.0, float(weights["culture_fit"]["weight"]),
-            0.01,
-            help=weights["culture_fit"]["description"]
-        )
-        new_weights["culture_fit"] = culture_weight
+            profile_weight = st.slider(
+                "📝 Profile Description Match",
+                0.0, 1.0, float(weights["profile_description_match"]["weight"]),
+                0.01,
+                help=weights["profile_description_match"]["description"]
+            )
+            new_weights["profile_description_match"] = profile_weight
+        else:
+            experience_weight = st.slider(
+                "💼 Experience",
+                0.0, 1.0, 0.20,
+                0.01
+            )
+            new_weights["experience"] = experience_weight
 
     # Calculate total
     total_weight = sum(new_weights.values())
@@ -332,10 +335,15 @@ with tab1:
     st.markdown("---")
     st.subheader("Weight Summary")
 
-    if abs(total_weight - 1.0) < 0.01:
-        st.success(f"✅ Total Weight: {total_weight:.2%} (Valid)")
-    else:
-        st.error(f"❌ Total Weight: {total_weight:.2%} (Must equal 100%)")
+    col_sum1, col_sum2 = st.columns(2)
+    with col_sum1:
+        if abs(total_weight - 1.0) < 0.01:
+            st.success(f"✅ Total Weight: {total_weight:.2%} (Valid)")
+        else:
+            st.error(f"❌ Total Weight: {total_weight:.2%} (Must equal 100%)")
+
+    with col_sum2:
+        st.info("🚫 **Deal Breakers (Not Weighted)**\n\n• Location Compatibility\n• Work Authorization")
 
     # Visual representation
     col1, col2, col3 = st.columns(3)
@@ -370,7 +378,23 @@ with tab1:
 # ============================================================================
 
 with tab2:
-    st.markdown('<div class="section-header">Location Compatibility Rules</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">Location Compatibility Rules (DEAL BREAKER)</div>', unsafe_allow_html=True)
+
+    st.markdown("""
+        <div class="warning-box" style="background: #fef3c7; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #f59e0b;">
+            <strong>⚠️ Location is now a DEAL BREAKER in v2.0</strong><br><br>
+            Candidates who don't match location requirements are automatically EXCLUDED from main results.
+            They appear in a separate "Excluded Candidates" section showing their potential skills match.<br><br>
+            <strong>Current Logic:</strong><br>
+            • Remote job + Remote candidate = ✅ PASS<br>
+            • Onsite job + Remote candidate = ❌ EXCLUDED (unless willing to relocate)<br>
+            • Hybrid job + Hybrid candidate = ✅ PASS<br>
+            • Flexible = Always ✅ PASS<br><br>
+            Location rules are configured in <code>matching_rules.json</code> under <code>location_rules.compatibility_matrix</code>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.info("This tab will be updated soon to allow visual editing of location rules. For now, edit `backend/app/config/matching_rules.json` directly.")
 
     st.markdown("""
         <div class="info-box">
@@ -486,10 +510,13 @@ with tab2:
 with tab3:
     st.markdown('<div class="section-header">Scoring Thresholds & Recommendations</div>', unsafe_allow_html=True)
 
+    st.info("✅ This tab is working correctly with the new v2.0 algorithm")
+
     st.markdown("""
         <div class="info-box">
             <strong>ℹ️ Score Ranges</strong><br>
-            Define what overall match scores mean and what actions to take for each range.
+            Define what overall match scores mean and what actions to take for each range.<br>
+            <strong>Note:</strong> Scores are calculated ONLY for candidates who pass deal-breaker filters (Location & Work Auth).
         </div>
     """, unsafe_allow_html=True)
 
@@ -551,10 +578,13 @@ with tab3:
 with tab4:
     st.markdown('<div class="section-header">Experience Requirements Rules</div>', unsafe_allow_html=True)
 
+    st.info("✅ This tab is working correctly with the new v2.0 algorithm")
+
     st.markdown("""
         <div class="info-box">
-            <strong>ℹ️ Experience Scoring</strong><br>
-            Define how to score candidates based on years of experience relative to job requirements.
+            <strong>ℹ️ Experience Scoring (20% weight)</strong><br>
+            Define how to score candidates based on years of experience relative to job requirements.<br>
+            Experience penalties/bonuses are applied within the 20% Experience component of the overall score.
         </div>
     """, unsafe_allow_html=True)
 
@@ -619,14 +649,20 @@ with tab4:
 with tab5:
     st.markdown('<div class="section-header">Advanced System Settings</div>', unsafe_allow_html=True)
 
-    st.subheader("🚫 Auto-Reject Rules")
+    st.warning("⚠️ This tab may have compatibility issues with v2.0. Deal-breaker filtering now handles most auto-reject scenarios.")
 
-    auto_reject_enabled = st.checkbox(
-        "Enable Auto-Reject Rules",
-        value=rules["filters"]["auto_reject_rules"]["enabled"]
-    )
+    st.subheader("🚫 Auto-Reject Rules (Legacy)")
 
-    if auto_reject_enabled:
+    if "filters" in rules and "auto_reject_rules" in rules["filters"]:
+        auto_reject_enabled = st.checkbox(
+            "Enable Auto-Reject Rules",
+            value=rules["filters"]["auto_reject_rules"]["enabled"]
+        )
+    else:
+        auto_reject_enabled = False
+        st.info("Auto-reject rules not configured in v2.0. Deal-breaker system handles exclusions.")
+
+    if auto_reject_enabled and "filters" in rules:
         st.markdown("""
             <div class="warning-box">
                 <strong>⚠️ Warning</strong><br>

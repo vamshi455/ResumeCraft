@@ -844,7 +844,7 @@ if st.session_state.selected_job and st.session_state.resume_bank is not None:
 
         # Display good matches first
         st.markdown(f"### ✅ Compatible Candidates ({len(good_location_matches)})")
-        st.caption("📊 Scoring: Skills (30%) + Experience (25%) + Location (20%) + Education (10%) + Soft Skills (8%) + Culture (7%)")
+        st.caption("📊 Scoring: Job Title Match (35%) + Skills (30%) + Experience (20%) + Profile Description (15%) | ⚠️ Location & Work Auth are DEAL BREAKERS")
 
         # Display in grid using columns
         num_cols = 3
