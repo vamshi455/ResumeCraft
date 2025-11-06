@@ -58,12 +58,55 @@ class MatchingRulesEngine:
             weights[key] = config["weight"]
         return weights
 
+    def check_work_authorization(
+        self,
+        candidate_status: str,
+        job_sponsorship_policy: str
+    ) -> Tuple[bool, str]:
+        """
+        Check if candidate's work authorization meets job requirements
+
+        Args:
+            candidate_status: Candidate's work auth status (US Citizen, H1B, etc.)
+            job_sponsorship_policy: Job's sponsorship policy (no_sponsorship, h1b_transfer, full_sponsorship, citizen_gc_only)
+
+        Returns:
+            Tuple of (is_authorized, reasoning)
+        """
+        if "work_authorization_rules" not in self.rules:
+            return True, "No work authorization rules configured"
+
+        policies = self.rules["work_authorization_rules"]["sponsorship_policies"]
+
+        if job_sponsorship_policy not in policies:
+            logger.warning(f"Unknown sponsorship policy: {job_sponsorship_policy}")
+            return True, "Unknown policy - allowing by default"
+
+        policy = policies[job_sponsorship_policy]
+        accepted = policy["accepted_statuses"]
+        rejected = policy["rejected_statuses"]
+
+        # Normalize candidate status
+        candidate_status = candidate_status.strip()
+
+        # Check if accepted
+        if candidate_status in accepted:
+            return True, f"Work authorization accepted: {candidate_status}"
+
+        # Check if explicitly rejected
+        if candidate_status in rejected:
+            return False, f"Work authorization not accepted: {policy['reasoning']}"
+
+        # Unknown status - allow with warning
+        logger.warning(f"Unknown work authorization status: {candidate_status}")
+        return True, f"Unknown status '{candidate_status}' - review manually"
+
     def get_location_compatibility_score(
         self,
         job_location: str,
         candidate_preference: str,
         willing_to_relocate: bool = False
-    ) -> Tuple[int, str]:
+    ) -> Tuple[int, str, bool]:
         """
         Calculate location compatibility score
 
@@ -73,7 +116,7 @@ class MatchingRulesEngine:
             willing_to_relocate: Whether candidate is willing to relocate
 
         Returns:
-            Tuple of (score, reasoning)
+            Tuple of (score, reasoning, passes_threshold)
         """
         # Normalize inputs
         job_location = job_location.strip().title()
@@ -91,20 +134,30 @@ class MatchingRulesEngine:
 
         if matching_rule is None:
             logger.warning(f"No matching rule found for {job_location} + {candidate_preference}")
-            return 50, "No specific rule found - using default score"
+            return 50, "No specific rule found - using default score", True
 
         base_score = matching_rule["score"]
-        reasoning = matching_rule["reasoning"]
+        reasoning = matching_rule.get("reasoning", "")
+        passes = matching_rule.get("passes", True)
+
+        # Get deal breaker threshold
+        threshold = self.rules["location_rules"].get("deal_breaker_threshold", 50)
 
         # Apply relocation bonus if applicable
-        if (willing_to_relocate and
-            self.rules["location_rules"]["relocation"]["enabled"] and
-            base_score < 70):
-            bonus = self.rules["location_rules"]["relocation"]["rules"]["willing_to_relocate"]["score_boost"]
-            base_score = min(100, base_score + bonus)
-            reasoning += f" (+{bonus} bonus for willingness to relocate)"
+        if willing_to_relocate and self.rules["location_rules"]["relocation"]["enabled"]:
+            if base_score < threshold:
+                bonus = self.rules["location_rules"]["relocation"]["score_boost"]
+                base_score = min(100, base_score + bonus)
+                reasoning += f" (+{bonus} bonus for willingness to relocate)"
+                # Check if relocation bonus pushes score above threshold
+                if base_score >= threshold:
+                    passes = True
 
-        return base_score, reasoning
+        # Final threshold check
+        if base_score < threshold:
+            passes = False
+
+        return base_score, reasoning, passes
 
     def get_experience_score_adjustment(
         self,

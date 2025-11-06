@@ -485,26 +485,81 @@ Willing to Relocate: {candidate.get('willing_to_relocate', 'Unknown')}
 """
 
 def match_candidate_to_job_simple(llm, candidate, job):
-    """Enhanced matching with rules engine integration"""
+    """
+    Enhanced matching with deal-breaker filtering and weighted scoring
+
+    NEW ALGORITHM (v2.0):
+    - Job Title Match: 35%
+    - Skills Match: 30%
+    - Experience: 20%
+    - Profile Description Match: 15%
+
+    DEAL BREAKERS (must pass or excluded):
+    - Location compatibility
+    - Work authorization
+    """
     from langchain_core.messages import HumanMessage
 
-    # Get rules engine for proper scoring
+    # Get rules engine
     if RULES_ENGINE_AVAILABLE:
         rules_engine = get_rules_engine()
         weights = rules_engine.get_matching_weights()
     else:
         weights = {
+            "job_title_match": 0.35,
             "skills": 0.30,
-            "experience": 0.25,
-            "location": 0.20,
-            "education": 0.10,
-            "soft_skills": 0.08,
-            "culture_fit": 0.07
+            "experience": 0.20,
+            "profile_description_match": 0.15
         }
 
-    # Ask AI to score each component
+    # STEP 1: Check Deal Breakers
+    exclusion_reason = None
+
+    # Check work authorization (DEAL BREAKER)
+    candidate_work_auth = candidate.get('work_authorization', 'Not Specified')
+    job_sponsorship = job.get('sponsorship_policy', 'full_sponsorship')
+
+    work_auth_passes = True
+    work_auth_reasoning = ""
+
+    if RULES_ENGINE_AVAILABLE and candidate_work_auth != 'Not Specified':
+        work_auth_passes, work_auth_reasoning = rules_engine.check_work_authorization(
+            candidate_work_auth, job_sponsorship
+        )
+        if not work_auth_passes:
+            exclusion_reason = "work_authorization"
+
+    # Check location compatibility (DEAL BREAKER)
+    job_location = job.get('location_type', 'Remote')
+    candidate_pref = candidate.get('location_preference', 'Flexible')
+    willing_relocate = str(candidate.get('willing_to_relocate', 'No')).lower() in ['yes', 'true', '1']
+
+    location_passes = True
+    location_score = 100
+    location_reasoning = ""
+
+    if RULES_ENGINE_AVAILABLE:
+        location_score, location_reasoning, location_passes = rules_engine.get_location_compatibility_score(
+            job_location, candidate_pref, willing_relocate
+        )
+    else:
+        # Fallback logic
+        if job_location == candidate_pref or candidate_pref == 'Flexible':
+            location_score = 100
+            location_passes = True
+        elif job_location == 'Onsite' and candidate_pref == 'Remote':
+            location_score = 30
+            location_passes = False if not willing_relocate else True
+        else:
+            location_score = 70
+            location_passes = True
+
+    if not location_passes and not exclusion_reason:
+        exclusion_reason = "location_mismatch"
+
+    # STEP 2: Ask AI to score components
     prompt = f"""
-You are an expert recruiter. Analyze this candidate against the job requirements and score each component.
+You are an expert recruiter. Score this candidate against the job.
 
 CANDIDATE:
 {prepare_candidate_description(candidate)}
@@ -512,27 +567,22 @@ CANDIDATE:
 JOB:
 {prepare_job_description(job)}
 
-SCORING WEIGHTS:
-- Technical Skills: {weights['skills']:.0%}
-- Experience: {weights['experience']:.0%}
-- Location: {weights['location']:.0%}
-- Education: {weights['education']:.0%}
-- Soft Skills: {weights['soft_skills']:.0%}
-- Culture Fit: {weights['culture_fit']:.0%}
+Score these components (0-100 each):
+1. JOB TITLE MATCH ({weights['job_title_match']:.0%}): How well does candidate's current/previous titles align with this job title?
+2. SKILLS MATCH ({weights['skills']:.0%}): Technical skills from job description match
+3. EXPERIENCE ({weights['experience']:.0%}): Years and domain relevance
+4. PROFILE DESCRIPTION MATCH ({weights['profile_description_match']:.0%}): Overall profile narrative alignment with job description
 
-Return ONLY valid JSON with component scores:
+Return ONLY valid JSON:
 {{
+  "job_title_match_score": 0-100,
   "skills_score": 0-100,
   "experience_score": 0-100,
-  "education_score": 0-100,
-  "soft_skills_score": 0-100,
-  "culture_fit_score": 0-100,
+  "profile_description_match_score": 0-100,
   "strengths": ["strength1", "strength2", "strength3"],
   "gaps": ["gap1", "gap2"],
-  "reasoning": "Brief explanation of the match"
+  "reasoning": "Brief explanation"
 }}
-
-Note: Do NOT include location_score - it will be calculated using rules engine.
 """
 
     messages = [HumanMessage(content=prompt)]
@@ -541,54 +591,21 @@ Note: Do NOT include location_score - it will be calculated using rules engine.
     try:
         ai_result = json.loads(response.content)
 
-        # Get location compatibility score from rules engine
-        job_location = job.get('location_type', 'Remote')
-        candidate_pref = candidate.get('location_preference', 'Flexible')
-        willing_relocate = str(candidate.get('willing_to_relocate', 'No')).lower() in ['yes', 'true', '1']
-
-        if RULES_ENGINE_AVAILABLE:
-            location_score, location_reasoning = rules_engine.get_location_compatibility_score(
-                job_location, candidate_pref, willing_relocate
-            )
-        else:
-            # Fallback location scoring
-            if job_location == candidate_pref or candidate_pref == 'Flexible' or job_location == 'Flexible':
-                location_score = 100
-            elif job_location == 'Onsite' and candidate_pref == 'Remote' and not willing_relocate:
-                location_score = 30
-            elif job_location == 'Remote' and candidate_pref == 'Onsite':
-                location_score = 85
-            elif job_location == 'Hybrid' and candidate_pref == 'Remote' and not willing_relocate:
-                location_score = 60
-            else:
-                location_score = 70
-            location_reasoning = f"Job: {job_location}, Candidate: {candidate_pref}"
-
-        # Calculate weighted overall score WITH location
+        # STEP 3: Calculate weighted scores
         component_scores = {
+            "job_title_match": ai_result.get("job_title_match_score", 50),
             "skills": ai_result.get("skills_score", 50),
             "experience": ai_result.get("experience_score", 50),
-            "location": location_score,
-            "education": ai_result.get("education_score", 50),
-            "soft_skills": ai_result.get("soft_skills_score", 50),
-            "culture_fit": ai_result.get("culture_fit_score", 50)
+            "profile_description_match": ai_result.get("profile_description_match_score", 50)
         }
 
-        if RULES_ENGINE_AVAILABLE:
-            overall_score = rules_engine.calculate_weighted_score(component_scores)
-        else:
-            overall_score = sum(component_scores[k] * weights[k] for k in component_scores.keys())
+        # Calculate overall score
+        overall_score = sum(component_scores[k] * weights[k] for k in component_scores.keys())
 
-        # Calculate score WITHOUT location (what it would be if location was perfect)
-        component_scores_no_location = component_scores.copy()
-        component_scores_no_location["location"] = 100  # Perfect location match
+        # Calculate "potential" score - shows skills-based match even if deal breakers fail
+        score_without_deal_breakers = overall_score
 
-        if RULES_ENGINE_AVAILABLE:
-            score_without_location = rules_engine.calculate_weighted_score(component_scores_no_location)
-        else:
-            score_without_location = sum(component_scores_no_location[k] * weights[k] for k in component_scores_no_location.keys())
-
-        # Get recommendation
+        # STEP 4: Get recommendation
         if RULES_ENGINE_AVAILABLE:
             rec_info = rules_engine.get_recommendation(overall_score)
             recommendation = rec_info['recommendation']
@@ -604,29 +621,41 @@ Note: Do NOT include location_score - it will be calculated using rules engine.
             else:
                 recommendation = "NOT RECOMMENDED"
 
+        # STEP 5: Return result with exclusion info
         return {
             "match_score": round(overall_score, 1),
-            "score_without_location": round(score_without_location, 1),
-            "location_score": location_score,
-            "location_reasoning": location_reasoning,
+            "score_without_deal_breakers": round(score_without_deal_breakers, 1),
             "component_scores": component_scores,
             "recommendation": recommendation,
             "strengths": ai_result.get("strengths", []),
             "gaps": ai_result.get("gaps", []),
-            "reasoning": ai_result.get("reasoning", "")
+            "reasoning": ai_result.get("reasoning", ""),
+            # Deal breaker info
+            "excluded": exclusion_reason is not None,
+            "exclusion_reason": exclusion_reason,
+            "location_score": location_score,
+            "location_reasoning": location_reasoning,
+            "location_passes": location_passes,
+            "work_auth_passes": work_auth_passes,
+            "work_auth_reasoning": work_auth_reasoning
         }
     except Exception as e:
         st.error(f"Matching error: {str(e)}")
         return {
             "match_score": 50,
-            "score_without_location": 50,
-            "location_score": 50,
-            "location_reasoning": "Error in scoring",
+            "score_without_deal_breakers": 50,
             "component_scores": {},
             "recommendation": "REVIEW REQUIRED",
             "strengths": ["Unable to parse AI response"],
             "gaps": [],
-            "reasoning": f"Error: {str(e)}"
+            "reasoning": f"Error: {str(e)}",
+            "excluded": False,
+            "exclusion_reason": None,
+            "location_score": 50,
+            "location_reasoning": "Error",
+            "location_passes": True,
+            "work_auth_passes": True,
+            "work_auth_reasoning": "Error"
         }
 
 # ============================================================================
