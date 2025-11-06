@@ -834,28 +834,29 @@ if st.session_state.selected_job and st.session_state.resume_bank is not None:
                     rec_class = get_recommendation_class(recommendation)
 
                     with col:
-                        st.markdown(f'''
-                        <div class="match-card-grid">
-                            <div class="match-score-badge {score_class}">{score}</div>
+                        # Build the gaps HTML if gaps exist
+                        gaps_html = ""
+                        if gaps:
+                            gaps_items = "<br>".join([f"• {g}" for g in gaps[:3]])
+                            gaps_html = f'<div class="match-gaps"><strong>⚠️ Gaps:</strong><br>{gaps_items}</div>'
 
-                            <div class="candidate-name">{candidate.get('name', 'Unknown')}</div>
-                            <div class="candidate-meta">
-                                {candidate.get('domain', 'N/A')} • {candidate.get('exp_years', 'N/A')} years
-                                <br>
-                                <span class="location-badge">{candidate.get('location_preference', 'Flexible')}</span>
-                                <span class="location-badge">{candidate.get('location', 'N/A')}</span>
-                            </div>
-
-                            <div class="match-strengths">
-                                <strong>✅ Strengths:</strong><br>
-                                {"<br>".join([f"• {s}" for s in strengths[:3]])}
-                            </div>
-
-                            {f'<div class="match-gaps"><strong>⚠️ Gaps:</strong><br>{"<br>".join([f"• {g}" for g in gaps[:2]])}</div>' if gaps else ''}
-
-                            <div class="rec-badge {rec_class}">{recommendation}</div>
-                        </div>
-                        ''', unsafe_allow_html=True)
+                        # Build the card HTML
+                        card_html = f'''<div class="match-card-grid">
+    <div class="match-score-badge {score_class}">{score}</div>
+    <div class="candidate-name">{candidate.get('name', 'Unknown')}</div>
+    <div class="candidate-meta">
+        {candidate.get('domain', 'N/A')} • {candidate.get('exp_years', 'N/A')} years<br>
+        <span class="location-badge">{candidate.get('location_preference', 'Flexible')}</span>
+        <span class="location-badge">{candidate.get('location', 'N/A')}</span>
+    </div>
+    <div class="match-strengths">
+        <strong>✅ Strengths:</strong><br>
+        {"<br>".join([f"• {s}" for s in strengths[:3]])}
+    </div>
+    {gaps_html}
+    <div class="rec-badge {rec_class}">{recommendation}</div>
+</div>'''
+                        st.markdown(card_html, unsafe_allow_html=True)
 
         # Display poor location matches (hidden by default)
         if poor_location_matches:
@@ -899,45 +900,46 @@ if st.session_state.selected_job and st.session_state.resume_bank is not None:
                             potential_score_class = get_match_score_class(score_without_location)
 
                             with col:
-                                st.markdown(f'''
-                                <div class="match-card-grid" style="border: 2px solid #dc2626; opacity: 0.85;">
-                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                                        <div class="match-score-badge {score_class}" style="background: #dc2626; font-size: 1.2rem;">
-                                            {score}
-                                            <div style="font-size: 0.55rem; margin-top: 0.2rem;">ACTUAL</div>
-                                        </div>
-                                        <div class="match-score-badge {potential_score_class}" style="font-size: 1rem; padding: 0.4rem 0.6rem;">
-                                            {score_without_location}
-                                            <div style="font-size: 0.55rem; margin-top: 0.2rem;">POTENTIAL</div>
-                                        </div>
-                                    </div>
+                                # Build gaps HTML
+                                gaps_html = ""
+                                if gaps:
+                                    gaps_items = "<br>".join([f"• {g}" for g in gaps[:2]])
+                                    gaps_html = f'<div class="match-gaps"><strong>⚠️ Additional Gaps:</strong><br>{gaps_items}</div>'
 
-                                    <div class="candidate-name">{candidate.get('name', 'Unknown')}</div>
-                                    <div class="candidate-meta">
-                                        {candidate.get('domain', 'N/A')} • {candidate.get('exp_years', 'N/A')} years
-                                        <br>
-                                        <span class="location-badge" style="background: #fee2e2; color: #7f1d1d; border: 1px solid #dc2626;">
-                                            ❌ Prefers: {candidate_pref}
-                                        </span>
-                                        <span class="location-badge">{candidate.get('location', 'N/A')}</span>
-                                    </div>
+                                # Build relocation text
+                                relocation_text = '✅ Willing to relocate' if willing_relocate else '❌ Not willing to relocate'
 
-                                    <div style="background: #fee2e2; padding: 0.5rem; border-radius: 4px; border-left: 3px solid #dc2626; margin: 0.5rem 0; font-size: 0.75rem;">
-                                        <strong>🚫 Location Penalty: -{round((100 - location_score) * 0.20, 1)} pts</strong><br>
-                                        Job needs <strong>{job_location_type}</strong>, wants <strong>{candidate_pref}</strong>
-                                        {f'<br>✅ Willing to relocate' if willing_relocate else '<br>❌ Not willing to relocate'}
-                                    </div>
-
-                                    <div class="match-strengths">
-                                        <strong>✅ Skills Match:</strong><br>
-                                        {"<br>".join([f"• {s}" for s in strengths[:3]])}
-                                    </div>
-
-                                    {f'<div class="match-gaps"><strong>⚠️ Additional Gaps:</strong><br>{"<br>".join([f"• {g}" for g in gaps[:2]])}</div>' if gaps else ''}
-
-                                    <div class="rec-badge {rec_class}">LOCATION MISMATCH</div>
-                                </div>
-                                ''', unsafe_allow_html=True)
+                                # Build the card HTML
+                                mismatch_card_html = f'''<div class="match-card-grid" style="border: 2px solid #dc2626; opacity: 0.85;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+        <div class="match-score-badge {score_class}" style="background: #dc2626; font-size: 1.2rem;">
+            {score}<div style="font-size: 0.55rem; margin-top: 0.2rem;">ACTUAL</div>
+        </div>
+        <div class="match-score-badge {potential_score_class}" style="font-size: 1rem; padding: 0.4rem 0.6rem;">
+            {score_without_location}<div style="font-size: 0.55rem; margin-top: 0.2rem;">POTENTIAL</div>
+        </div>
+    </div>
+    <div class="candidate-name">{candidate.get('name', 'Unknown')}</div>
+    <div class="candidate-meta">
+        {candidate.get('domain', 'N/A')} • {candidate.get('exp_years', 'N/A')} years<br>
+        <span class="location-badge" style="background: #fee2e2; color: #7f1d1d; border: 1px solid #dc2626;">
+            ❌ Prefers: {candidate_pref}
+        </span>
+        <span class="location-badge">{candidate.get('location', 'N/A')}</span>
+    </div>
+    <div style="background: #fee2e2; padding: 0.5rem; border-radius: 4px; border-left: 3px solid #dc2626; margin: 0.5rem 0; font-size: 0.75rem;">
+        <strong>🚫 Location Penalty: -{round((100 - location_score) * 0.20, 1)} pts</strong><br>
+        Job needs <strong>{job_location_type}</strong>, wants <strong>{candidate_pref}</strong><br>
+        {relocation_text}
+    </div>
+    <div class="match-strengths">
+        <strong>✅ Skills Match:</strong><br>
+        {"<br>".join([f"• {s}" for s in strengths[:3]])}
+    </div>
+    {gaps_html}
+    <div class="rec-badge {rec_class}">LOCATION MISMATCH</div>
+</div>'''
+                                st.markdown(mismatch_card_html, unsafe_allow_html=True)
 
                 st.markdown(f"""
                 <div style="background: #fef3c7; padding: 0.75rem; border-radius: 6px; border-left: 3px solid #f59e0b; margin-top: 1rem; font-size: 0.85rem;">
