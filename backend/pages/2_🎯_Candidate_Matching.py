@@ -1,7 +1,6 @@
 """
 MHK Tech Inc - AI Recruitment Platform
-Entity Resolution & Candidate-Job Matching
-Match IT job positions with candidates from your resume bank using advanced AI
+Compact, Professional Candidate-Job Matching Interface
 """
 
 import streamlit as st
@@ -15,12 +14,12 @@ from io import BytesIO
 import traceback
 
 # Add project to path
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from dotenv import load_dotenv
 from langchain_anthropic import ChatAnthropic
 
-# Load environment (works locally)
+# Load environment
 load_dotenv()
 
 # For Streamlit Cloud: Load secrets into environment
@@ -30,7 +29,7 @@ if hasattr(st, 'secrets'):
             if key not in os.environ:
                 os.environ[key] = st.secrets[key]
     except Exception as e:
-        pass  # Secrets not configured yet
+        pass
 
 # Try to import LangSmith client
 try:
@@ -38,26 +37,25 @@ try:
     LANGSMITH_AVAILABLE = True
 except ImportError:
     LANGSMITH_AVAILABLE = False
-    print("LangSmith client not available, will use local workflow")
 
 # ============================================================================
 # PAGE CONFIG
 # ============================================================================
 
 st.set_page_config(
-    page_title="MHK Tech Inc - AI Recruitment Platform",
+    page_title="MHK Tech Inc - Candidate Matching",
     page_icon="🎯",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
 # ============================================================================
-# CUSTOM CSS
+# CUSTOM CSS - COMPACT & PROFESSIONAL
 # ============================================================================
 
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     * {
         font-family: 'Inter', sans-serif;
@@ -66,314 +64,329 @@ st.markdown("""
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 
+    /* Reduce top padding */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+        max-width: 100% !important;
+    }
+
     .main {
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        padding: 0;
+        padding: 0 !important;
     }
 
-    .mhk-logo-container {
+    /* Watermark */
+    .watermark {
+        position: fixed;
+        top: 10px;
+        right: 20px;
+        background: rgba(94, 96, 206, 0.95);
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        z-index: 999;
+        box-shadow: 0 2px 8px rgba(94, 96, 206, 0.3);
+        letter-spacing: 0.05em;
+    }
+
+    /* Compact Header */
+    .compact-header {
         text-align: center;
-        padding: 1.5rem 0;
+        padding: 0.75rem 0;
         background: white;
         border-bottom: 2px solid #e9ecef;
-        margin-bottom: 2rem;
+        margin-bottom: 1rem;
     }
 
-    .mhk-logo {
-        font-size: 2.5rem;
+    .compact-logo {
+        font-size: 1.5rem;
         font-weight: 700;
-        color: #1e1e1e;
         letter-spacing: 0.1em;
-        margin-bottom: 0.25rem;
-    }
-
-    .mhk-tagline {
-        font-size: 0.9rem;
-        color: #6c757d;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-    }
-
-    .mhk-icon {
         display: inline-block;
-        width: 40px;
-        height: 40px;
         margin-right: 1rem;
+    }
+
+    .compact-title {
+        font-size: 1.1rem;
+        color: #495057;
+        display: inline-block;
         vertical-align: middle;
     }
 
-    .block-container {
-        max-width: 1600px;
-        padding: 2rem;
+    /* Compact Sections */
+    .compact-section {
         background: white;
-        margin: 2rem auto;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
-    .main-header {
-        text-align: center;
-        padding: 2rem 0 1rem 0;
-        background: linear-gradient(135deg, #5e60ce 0%, #6930c3 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        font-size: 2.5rem;
+    .section-title {
+        font-size: 1rem;
         font-weight: 700;
-        margin-bottom: 0.5rem;
+        color: #1e1e1e;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #5e60ce;
     }
 
-    .sub-header {
-        text-align: center;
-        color: #475569;
-        font-size: 1.3rem;
-        margin-bottom: 3rem;
-        font-weight: 500;
+    /* Compact Form */
+    .stTextInput input, .stTextArea textarea, .stSelectbox select, .stNumberInput input {
+        font-size: 0.85rem !important;
+        padding: 0.4rem 0.6rem !important;
     }
 
-    .section-container {
-        background: #ffffff;
-        border-radius: 12px;
-        padding: 2rem;
-        margin: 1rem 0;
+    .stTextInput label, .stTextArea label, .stSelectbox label, .stNumberInput label {
+        font-size: 0.8rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    /* Compact Job Cards */
+    .job-card-compact {
+        background: linear-gradient(135deg, #5e60ce 0%, #6930c3 100%);
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin: 0.5rem 0;
+        color: white;
+        box-shadow: 0 2px 6px rgba(94, 96, 206, 0.3);
+        transition: all 0.2s ease;
+    }
+
+    .job-card-compact:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(94, 96, 206, 0.4);
+    }
+
+    .job-card-compact h4 {
+        margin: 0 0 0.25rem 0;
+        font-size: 1rem;
+        color: white;
+    }
+
+    .job-card-compact p {
+        margin: 0.15rem 0;
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.95);
+    }
+
+    /* Grid Layout for Results */
+    .match-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .match-card-grid {
+        background: white;
         border: 2px solid #e2e8f0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        height: 100%;
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
     }
 
-    .section-header {
+    .match-card-grid:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        transform: translateY(-3px);
+        border-color: #5e60ce;
+    }
+
+    .match-score-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
         font-size: 1.5rem;
         font-weight: 700;
-        color: #0f172a;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 3px solid #5e60ce;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .job-card {
-        background: linear-gradient(135deg, #5e60ce 0%, #6930c3 100%);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin: 1rem 0;
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
         color: white;
-        box-shadow: 0 4px 12px rgba(94, 96, 206, 0.3);
-        transition: all 0.3s ease;
-        cursor: pointer;
     }
 
-    .job-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 6px 20px rgba(94, 96, 206, 0.4);
-    }
-
-    .job-card h3 {
-        margin: 0 0 0.5rem 0;
-        color: white;
-        font-weight: 700;
-    }
-
-    .job-card p {
-        margin: 0.25rem 0;
-        color: rgba(255, 255, 255, 0.95);
-        font-size: 0.95rem;
-    }
-
-    .candidate-card {
-        background: white;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 1.25rem;
-        margin: 0.75rem 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-    }
-
-    .candidate-card:hover {
-        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-        transform: translateY(-2px);
-        border-color: #cbd5e1;
-    }
-
-    .match-card {
-        background: white;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin: 1rem 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .match-score-excellent {
+    .score-excellent {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        font-weight: 700;
-        font-size: 1.2rem;
-        display: inline-block;
-        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
     }
 
-    .match-score-good {
+    .score-good {
         background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        font-weight: 700;
-        font-size: 1.2rem;
-        display: inline-block;
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
     }
 
-    .match-score-fair {
+    .score-moderate {
         background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        font-weight: 700;
-        font-size: 1.2rem;
-        display: inline-block;
-        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
     }
 
-    .match-score-poor {
+    .score-poor {
         background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        font-weight: 700;
-        font-size: 1.2rem;
-        display: inline-block;
-        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
     }
 
-    .success-box {
-        padding: 1.5rem;
+    .candidate-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e1e1e;
+        margin-bottom: 0.5rem;
+        padding-right: 80px;
+    }
+
+    .candidate-meta {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 0.75rem;
+    }
+
+    .match-detail {
+        margin: 0.5rem 0;
+        font-size: 0.85rem;
+    }
+
+    .match-strengths {
         background: #d1fae5;
-        border-left: 6px solid #10b981;
-        border-radius: 8px;
-        color: #065f46;
-        margin: 1rem 0;
-        font-weight: 500;
+        border-left: 3px solid #10b981;
+        padding: 0.5rem;
+        margin: 0.5rem 0;
+        border-radius: 4px;
+        font-size: 0.8rem;
     }
 
-    .info-box {
-        padding: 1.5rem;
-        background: #dbeafe;
-        border-left: 6px solid #2563eb;
-        border-radius: 8px;
-        color: #1e3a8a;
-        margin: 1rem 0;
-        font-weight: 500;
-    }
-
-    .warning-box {
-        padding: 1.5rem;
-        background: #fef3c7;
-        border-left: 6px solid #f59e0b;
-        border-radius: 8px;
-        color: #78350f;
-        margin: 1rem 0;
-        font-weight: 500;
-    }
-
-    .error-box {
-        padding: 1.5rem;
+    .match-gaps {
         background: #fee2e2;
-        border-left: 6px solid #dc2626;
-        border-radius: 8px;
-        color: #7f1d1d;
-        margin: 1rem 0;
-        font-weight: 500;
-    }
-
-    .metric-card {
-        background: linear-gradient(135deg, #5e60ce 0%, #6930c3 100%);
-        padding: 2rem;
-        border-radius: 12px;
-        color: white;
-        text-align: center;
+        border-left: 3px solid #ef4444;
+        padding: 0.5rem;
         margin: 0.5rem 0;
-        box-shadow: 0 4px 12px rgba(94, 96, 206, 0.3);
+        border-radius: 4px;
+        font-size: 0.8rem;
     }
 
-    .metric-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin: 0.5rem 0;
-        color: white;
+    .location-badge {
+        display: inline-block;
+        background: #dbeafe;
+        color: #1e40af;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 0.25rem;
     }
 
-    .metric-label {
-        font-size: 0.9rem;
-        opacity: 1;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
+    /* Compact Buttons */
     .stButton>button {
         background: linear-gradient(135deg, #5e60ce 0%, #6930c3 100%);
         color: white;
         border: none;
-        padding: 0.75rem 2rem;
-        border-radius: 12px;
-        font-weight: 700;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(94, 96, 206, 0.3);
+        padding: 0.5rem 1.25rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
     }
 
     .stButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(94, 96, 206, 0.4);
+        box-shadow: 0 4px 12px rgba(94, 96, 206, 0.4);
     }
 
-    .stProgress > div > div > div > div {
-        background: linear-gradient(135deg, #5e60ce 0%, #6930c3 100%);
+    /* Compact Expander */
+    .streamlit-expanderHeader {
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
     }
 
-    /* Dataframe styling */
-    .dataframe {
-        font-size: 0.9rem;
+    /* Stats Bar */
+    .stats-bar {
+        display: flex;
+        justify-content: space-around;
+        background: white;
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
-    /* Badge styles */
-    .badge {
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #5e60ce;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* Recommendation Badge */
+    .rec-badge {
         display: inline-block;
-        padding: 0.25rem 0.75rem;
+        padding: 0.35rem 0.75rem;
         border-radius: 6px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.5rem;
     }
 
-    .badge-primary {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .badge-success {
+    .rec-hire {
         background: #d1fae5;
         color: #065f46;
     }
 
-    .badge-warning {
+    .rec-consider {
+        background: #dbeafe;
+        color: #1e3a8a;
+    }
+
+    .rec-weak {
         background: #fef3c7;
         color: #78350f;
     }
 
-    .badge-danger {
+    .rec-reject {
         background: #fee2e2;
         color: #7f1d1d;
+    }
+
+    /* Compact Info Box */
+    .info-box-compact {
+        background: #dbeafe;
+        border-left: 4px solid #2563eb;
+        padding: 0.5rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        margin: 0.5rem 0;
+    }
+
+    /* Hide Streamlit Branding */
+    .viewerBadge_container__1QSob {
+        display: none !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================================
-# SESSION STATE INITIALIZATION
+# WATERMARK
+# ============================================================================
+
+st.markdown('''
+<div class="watermark">
+    <span style="color: #5e60ce;">●</span> MHK TECH INC
+</div>
+''', unsafe_allow_html=True)
+
+# ============================================================================
+# SESSION STATE
 # ============================================================================
 
 if 'resume_bank' not in st.session_state:
@@ -397,38 +410,28 @@ def get_llm(temperature=0.1):
         temperature=temperature,
     )
 
-@st.cache_resource
-def get_langsmith_client_cached():
-    """Get cached LangSmith client if available"""
-    if not LANGSMITH_AVAILABLE:
-        return None
-    try:
-        return get_langsmith_client()
-    except Exception as e:
-        st.warning(f"Could not initialize LangSmith client: {str(e)}")
-        return None
-
 def get_match_score_class(score):
     """Get CSS class based on match score"""
     if score >= 85:
-        return "match-score-excellent"
+        return "score-excellent"
     elif score >= 70:
-        return "match-score-good"
+        return "score-good"
     elif score >= 50:
-        return "match-score-fair"
+        return "score-moderate"
     else:
-        return "match-score-poor"
+        return "score-poor"
 
-def get_match_level_text(score):
-    """Get match level text based on score"""
-    if score >= 85:
-        return "Excellent Match"
-    elif score >= 70:
-        return "Good Match"
-    elif score >= 50:
-        return "Fair Match"
+def get_recommendation_class(recommendation):
+    """Get CSS class for recommendation"""
+    rec_lower = recommendation.lower()
+    if "strong" in rec_lower or "hire" in rec_lower:
+        return "rec-hire"
+    elif "consider" in rec_lower or "recommended" in rec_lower:
+        return "rec-consider"
+    elif "weak" in rec_lower:
+        return "rec-weak"
     else:
-        return "Poor Match"
+        return "rec-reject"
 
 def create_job_position_dict(title, department, required_skills, experience_years,
                             location, job_type, description, location_type="Remote"):
@@ -454,7 +457,7 @@ Job Title: {job["title"]}
 Department: {job["department"]}
 Required Experience: {job["experience_years"]} years
 Location: {job["location"]}
-Location Type: {job.get("location_type", "Remote")} (Remote/Hybrid/Onsite/Flexible)
+Location Type: {job.get("location_type", "Remote")}
 Job Type: {job["job_type"]}
 Required Skills: {skills_text}
 Description: {job["description"]}
@@ -470,671 +473,361 @@ Domain: {candidate.get('domain', 'N/A')}
 Previous Roles: {candidate.get('previous_roles', 'N/A')}
 Education: {candidate.get('education', 'N/A')}
 Current Location: {candidate.get('location', 'N/A')}
-Location Preference: {candidate.get('location_preference', 'Flexible')} (Remote/Hybrid/Onsite/Flexible)
+Location Preference: {candidate.get('location_preference', 'Flexible')}
 Willing to Relocate: {candidate.get('willing_to_relocate', 'Unknown')}
 """
 
-def match_candidate_to_job_langsmith(langsmith_client, candidate, job):
-    """
-    Match candidate to job using deployed LangSmith workflow
-
-    Args:
-        langsmith_client: LangSmith client instance
-        candidate: Candidate dictionary
-        job: Job position dictionary
-
-    Returns:
-        Match result dictionary with score and analysis
-    """
-    try:
-        job_desc = prepare_job_description(job)
-        candidate_desc = prepare_candidate_description(candidate)
-
-        # Call deployed workflow
-        result = langsmith_client.invoke(
-            resume_text=candidate_desc,
-            job_description=job_desc
-        )
-
-        # Extract output
-        output = langsmith_client.get_output(result)
-
-        # Transform to expected format
-        match_score = output.get("match_score", 0)
-        match_result = output.get("match_result", {})
-
-        return {
-            "match_score": match_score,
-            "match_level": "Excellent Match" if match_score >= 85 else
-                          "Good Match" if match_score >= 70 else
-                          "Fair Match" if match_score >= 50 else "Poor Match",
-            "strengths": match_result.get("strengths", []),
-            "gaps": match_result.get("gaps", []),
-            "skill_match_percentage": match_result.get("skill_match_percentage", match_score),
-            "experience_assessment": match_result.get("experience_assessment", ""),
-            "recommendation": match_result.get("recommendation", "review"),
-            "reasoning": output.get("final_recommendation", "")
-        }
-    except Exception as e:
-        st.error(f"LangSmith API error: {str(e)}")
-        # Return a default error response
-        return {
-            "match_score": 0,
-            "match_level": "Error",
-            "strengths": [],
-            "gaps": ["API Error"],
-            "skill_match_percentage": 0,
-            "experience_assessment": f"Error: {str(e)}",
-            "recommendation": "error",
-            "reasoning": f"Failed to process: {str(e)}"
-        }
-
 def match_candidate_to_job_simple(llm, candidate, job):
-    """
-    Simple matching using Claude AI to analyze candidate-job fit (Local fallback)
-
-    Args:
-        llm: Language model instance
-        candidate: Candidate dictionary
-        job: Job position dictionary
-
-    Returns:
-        Match result dictionary with score and analysis
-    """
+    """Simple local matching without LangSmith"""
     from langchain_core.messages import HumanMessage, SystemMessage
 
-    job_desc = prepare_job_description(job)
-    candidate_desc = prepare_candidate_description(candidate)
+    prompt = f"""
+You are an expert recruiter. Match this candidate to the job and provide a detailed analysis.
 
-    prompt = f"""You are an expert IT recruiter. Analyze the candidate's profile against the job requirements and provide a detailed matching assessment.
+CANDIDATE:
+{prepare_candidate_description(candidate)}
 
-**JOB REQUIREMENTS:**
-{job_desc}
+JOB:
+{prepare_job_description(job)}
 
-**CANDIDATE PROFILE:**
-{candidate_desc}
-
-Please provide your analysis in the following JSON format:
+Provide match score (0-100) and detailed analysis as JSON:
 {{
-    "match_score": <integer 0-100>,
-    "match_level": "<Excellent Match|Good Match|Fair Match|Poor Match>",
-    "strengths": [
-        "<strength 1>",
-        "<strength 2>",
-        "<strength 3>"
-    ],
-    "gaps": [
-        "<gap 1>",
-        "<gap 2>"
-    ],
-    "skill_match_percentage": <integer 0-100>,
-    "experience_assessment": "<assessment of experience fit>",
-    "recommendation": "<hire|interview|reject>",
-    "reasoning": "<detailed explanation of the match score and recommendation>"
+  "match_score": 85,
+  "recommendation": "STRONG HIRE",
+  "strengths": ["skill1", "skill2"],
+  "gaps": ["gap1"],
+  "reasoning": "Brief explanation"
 }}
+"""
 
-Evaluate based on:
-1. Skills alignment (technical and domain expertise)
-2. Experience level match
-3. Domain knowledge relevance
-4. Overall fit for the role
-
-Provide ONLY the JSON response, no additional text."""
+    messages = [HumanMessage(content=prompt)]
+    response = llm.invoke(messages)
 
     try:
-        messages = [
-            SystemMessage(content="You are an expert IT recruiter specializing in candidate-job matching."),
-            HumanMessage(content=prompt),
-        ]
-
-        response = llm.invoke(messages)
-
-        # Parse JSON response
-        import re
-        json_text = response.content.strip()
-
-        # Extract JSON if wrapped in markdown code blocks
-        if "```json" in json_text:
-            json_text = re.search(r'```json\n(.*?)\n```', json_text, re.DOTALL).group(1)
-        elif "```" in json_text:
-            json_text = re.search(r'```\n(.*?)\n```', json_text, re.DOTALL).group(1)
-
-        match_data = json.loads(json_text)
-
-        # Add metadata
-        match_data["candidate_name"] = candidate.get('name', 'N/A')
-        match_data["job_title"] = job["title"]
-        match_data["matched_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
+        result = json.loads(response.content)
+        return result
+    except:
         return {
-            "success": True,
-            "match_data": match_data,
-            "error": None
-        }
-
-    except Exception as e:
-        return {
-            "success": False,
-            "match_data": None,
-            "error": str(e)
+            "match_score": 50,
+            "recommendation": "REVIEW REQUIRED",
+            "strengths": ["Unable to parse response"],
+            "gaps": [],
+            "reasoning": "Error in matching process"
         }
 
 # ============================================================================
-# MAIN HEADER
+# COMPACT HEADER
 # ============================================================================
 
-# MHK Tech Inc Logo Header
 st.markdown('''
-<div class="mhk-logo-container">
-    <div class="mhk-logo">
+<div class="compact-header">
+    <span class="compact-logo">
         <span style="color: #5e60ce;">M</span><span style="color: #6930c3;">H</span><span style="color: #ff6b35;">K</span> TECH INC
-    </div>
-    <div class="mhk-tagline">AI-Powered Recruitment Platform</div>
+    </span>
+    <span class="compact-title">🎯 AI Candidate Matching</span>
 </div>
 ''', unsafe_allow_html=True)
 
-st.markdown('<div class="main-header">🎯 Candidate Matching System</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Match IT Job Positions with Your Resume Bank Using AI</div>', unsafe_allow_html=True)
-
 # ============================================================================
-# API STATUS CHECK
+# STATS BAR
 # ============================================================================
 
-api_key = os.getenv("ANTHROPIC_API_KEY")
-if not api_key or api_key == "your-anthropic-api-key-here":
-    # Check if running on Streamlit Cloud
-    is_streamlit_cloud = os.getenv("STREAMLIT_SHARING_MODE") or hasattr(st, 'secrets')
-
-    if is_streamlit_cloud:
-        st.markdown("""
-            <div class="error-box">
-                <strong>⚠️ Secrets Not Configured</strong>
-                <p>Please configure your secrets in Streamlit Cloud:</p>
-                <ol style="margin-top: 1rem; margin-left: 1.5rem;">
-                    <li>Click "⚙️ Settings" or "Manage app" in the bottom right</li>
-                    <li>Go to "Secrets" section</li>
-                    <li>Add your API keys (see example below)</li>
-                </ol>
-                <p style="margin-top: 1rem;"><strong>Required secrets:</strong></p>
-                <pre style="background: #f0f0f0; padding: 1rem; border-radius: 4px;">
-ANTHROPIC_API_KEY = "your-key-here"
-LANGSMITH_API_KEY = "lsv2_pt_your-key-here"
-LANGGRAPH_API_URL = "https://api.smith.langchain.com/deployments/028c1a44-1085-4888-b504-b5e0dbd1a949"
-                </pre>
-                <p style="margin-top: 1rem;">Get your Anthropic API key from: <a href="https://console.anthropic.com/" target="_blank">https://console.anthropic.com/</a></p>
-            </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-            <div class="error-box">
-                <strong>⚠️ API Key Missing</strong>
-                <p>Please set your ANTHROPIC_API_KEY in the .env file to use this application.</p>
-                <p style="margin-top: 1rem;">Get your API key from: <a href="https://console.anthropic.com/" target="_blank">https://console.anthropic.com/</a></p>
-            </div>
-        """, unsafe_allow_html=True)
-    st.stop()
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric("Jobs", len(st.session_state.job_positions), delta=None)
+with col2:
+    st.metric("Candidates", len(st.session_state.resume_bank) if st.session_state.resume_bank is not None else 0)
+with col3:
+    st.metric("Matches", len(st.session_state.matching_results))
+with col4:
+    avg_score = sum([r.get('match_score', 0) for r in st.session_state.matching_results]) / len(st.session_state.matching_results) if st.session_state.matching_results else 0
+    st.metric("Avg Score", f"{avg_score:.0f}")
 
 # ============================================================================
-# MAIN LAYOUT - TWO COLUMNS
+# MAIN LAYOUT - 2 COLUMNS
 # ============================================================================
 
-col_left, col_right = st.columns([1, 1], gap="large")
+col_left, col_right = st.columns([1, 1])
 
 # ============================================================================
-# LEFT COLUMN - JOB POSITIONS
+# LEFT: JOB POSITIONS
 # ============================================================================
 
 with col_left:
-    st.markdown('<div class="section-container">', unsafe_allow_html=True)
-    st.markdown('<div class="section-header"><span>💼 IT Job Positions</span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="compact-section">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">💼 Job Positions</div>', unsafe_allow_html=True)
 
-    # Add new job position
-    with st.expander("➕ Add New Job Position", expanded=True):
-        with st.form("add_job_form", clear_on_submit=True):
-            job_title = st.text_input("Job Title*", placeholder="e.g., Senior Python Developer")
-            job_dept = st.text_input("Department*", placeholder="e.g., Engineering")
-
-            col1, col2, col3 = st.columns(3)
+    # Compact Add Job Form
+    with st.expander("➕ Add New Position", expanded=len(st.session_state.job_positions) == 0):
+        with st.form("add_job", clear_on_submit=True):
+            col1, col2 = st.columns(2)
             with col1:
-                job_exp = st.number_input("Experience (years)*", min_value=0, max_value=30, value=3)
+                job_title = st.text_input("Title*", placeholder="Senior Python Developer")
+                job_dept = st.text_input("Department*", placeholder="Engineering")
+                job_exp = st.number_input("Experience (yrs)*", 0, 30, 3)
             with col2:
-                job_type = st.selectbox("Job Type*", ["Full-time", "Part-time", "Contract", "Internship"])
-            with col3:
-                job_location_type = st.selectbox(
-                    "Work Location*",
-                    ["Remote", "Hybrid", "Onsite", "Flexible"],
-                    help="Remote: 100% remote | Hybrid: Mix of remote/office | Onsite: Full-time office | Flexible: Open to any"
-                )
+                job_type = st.selectbox("Job Type*", ["Full-time", "Part-time", "Contract"])
+                job_location_type = st.selectbox("Work Type*", ["Remote", "Hybrid", "Onsite", "Flexible"])
+                job_location = st.text_input("City/Region*", placeholder="San Francisco, CA")
 
-            job_location = st.text_input("City/Region*", placeholder="e.g., San Francisco, CA or Remote - USA")
+            job_skills = st.text_area("Required Skills* (comma-separated)",
+                                     placeholder="Python, Django, PostgreSQL", height=60)
+            job_desc = st.text_area("Description*", placeholder="Job details...", height=80)
 
-            job_skills = st.text_area(
-                "Required Skills* (comma-separated)",
-                placeholder="e.g., Python, Django, REST API, PostgreSQL, Docker",
-                height=80
-            )
-
-            job_desc = st.text_area(
-                "Job Description*",
-                placeholder="Detailed job description, responsibilities, and requirements...",
-                height=120
-            )
-
-            submitted = st.form_submit_button("➕ Add Job Position", use_container_width=True)
-
-            if submitted:
+            if st.form_submit_button("➕ Add Job", use_container_width=True):
                 if all([job_title, job_dept, job_skills, job_desc, job_location]):
                     new_job = create_job_position_dict(
                         job_title, job_dept, job_skills, job_exp,
                         job_location, job_type, job_desc, job_location_type
                     )
                     st.session_state.job_positions.append(new_job)
-                    st.success(f"✅ Added: {job_title} ({job_location_type})")
+                    st.success(f"✅ Added: {job_title}")
                     st.rerun()
                 else:
-                    st.error("❌ Please fill all required fields")
+                    st.error("❌ Fill all required fields")
 
-    # Display job positions
+    # Display Jobs Compactly
     if st.session_state.job_positions:
-        st.markdown(f"**{len(st.session_state.job_positions)} Position(s) Available**")
-
         for idx, job in enumerate(st.session_state.job_positions):
-            st.markdown(f'<div class="job-card">', unsafe_allow_html=True)
-            st.markdown(f"### {job['title']}")
-
-            # Display location type icon
             location_icon = {"Remote": "🏠", "Hybrid": "🔄", "Onsite": "🏢", "Flexible": "✨"}.get(job.get('location_type', 'Remote'), "📍")
 
-            st.markdown(f"**{job['department']}** | {location_icon} {job.get('location_type', 'Remote')} ({job['location']}) | {job['job_type']}")
-            st.markdown(f"**Experience:** {job['experience_years']}+ years")
-            st.markdown(f"**Skills:** {', '.join(job['required_skills'][:5])}" +
-                       (f" +{len(job['required_skills'])-5} more" if len(job['required_skills']) > 5 else ""))
+            st.markdown(f'''
+            <div class="job-card-compact">
+                <h4>{job['title']}</h4>
+                <p>{job['department']} | {location_icon} {job.get('location_type', 'Remote')} | {job['job_type']}</p>
+                <p>Experience: {job['experience_years']}+ yrs | Skills: {len(job['required_skills'])}</p>
+            </div>
+            ''', unsafe_allow_html=True)
 
             col1, col2 = st.columns(2)
             with col1:
-                if st.button(f"🎯 Match Candidates", key=f"match_{idx}", use_container_width=True):
+                if st.button("🎯 Match", key=f"match_{idx}", use_container_width=True):
                     st.session_state.selected_job = job
             with col2:
-                if st.button(f"🗑️ Remove", key=f"remove_{idx}", use_container_width=True):
+                if st.button("🗑️", key=f"remove_{idx}", use_container_width=True):
                     st.session_state.job_positions.pop(idx)
                     st.rerun()
-
-            st.markdown('</div>', unsafe_allow_html=True)
     else:
-        st.markdown("""
-            <div class="info-box">
-                <strong>💡 No job positions yet</strong><br>
-                Click "Add New Job Position" above to get started.
-            </div>
-        """, unsafe_allow_html=True)
+        st.info("💡 Add your first job position to get started")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================================================
-# RIGHT COLUMN - RESUME BANK
+# RIGHT: RESUME BANK
 # ============================================================================
 
 with col_right:
-    st.markdown('<div class="section-container">', unsafe_allow_html=True)
-    st.markdown('<div class="section-header"><span>👥 Resume Bank</span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="compact-section">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">👥 Resume Bank</div>', unsafe_allow_html=True)
 
-    # Upload resume bank Excel
-    st.markdown("### 📤 Upload Resume Bank (Excel)")
+    st.markdown('<div class="info-box-compact"><strong>📋 Required columns:</strong> name, skill_set, exp_years, domain<br><strong>Optional:</strong> location_preference, willing_to_relocate</div>', unsafe_allow_html=True)
 
-    st.markdown("""
-        <div class="info-box">
-            <strong>📋 Excel Format Requirements:</strong><br>
-            Your Excel file should contain these columns:<br>
-            • <strong>name</strong> - Candidate name<br>
-            • <strong>skill_set</strong> - Technical skills (comma-separated)<br>
-            • <strong>exp_years</strong> - Years of experience<br>
-            • <strong>domain</strong> - Domain expertise (e.g., Web Development, Data Science)<br>
-            • <strong>previous_roles</strong> (optional) - Previous job titles<br>
-            • <strong>education</strong> (optional) - Education background<br>
-            • <strong>location</strong> (optional) - Current location<br>
-            • <strong>location_preference</strong> (optional) - Remote/Hybrid/Onsite/Flexible<br>
-            • <strong>willing_to_relocate</strong> (optional) - Yes/No
-        </div>
-    """, unsafe_allow_html=True)
-
-    uploaded_file = st.file_uploader(
-        "Choose Excel file (.xlsx, .xls)",
-        type=['xlsx', 'xls'],
-        help="Upload your resume bank Excel file"
-    )
+    uploaded_file = st.file_uploader("Upload Excel (.xlsx)", type=['xlsx', 'xls'], label_visibility="collapsed")
 
     if uploaded_file:
         try:
             df = pd.read_excel(uploaded_file)
             st.session_state.resume_bank = df
+            st.success(f"✅ Loaded {len(df)} candidates")
 
-            st.markdown(f"""
-                <div class="success-box">
-                    <strong>✅ Resume Bank Loaded Successfully!</strong><br>
-                    File: <strong>{uploaded_file.name}</strong><br>
-                    Candidates: <strong>{len(df)}</strong>
-                </div>
-            """, unsafe_allow_html=True)
-
-            # Display summary
-            st.markdown("### 📊 Resume Bank Overview")
-
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value">{len(df)}</div>
-                        <div class="metric-label">Total Candidates</div>
-                    </div>
-                """, unsafe_allow_html=True)
-
-            with col2:
-                avg_exp = df['exp_years'].mean() if 'exp_years' in df.columns else 0
-                st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value">{avg_exp:.1f}</div>
-                        <div class="metric-label">Avg Experience</div>
-                    </div>
-                """, unsafe_allow_html=True)
-
-            with col3:
-                unique_domains = df['domain'].nunique() if 'domain' in df.columns else 0
-                st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value">{unique_domains}</div>
-                        <div class="metric-label">Domains</div>
-                    </div>
-                """, unsafe_allow_html=True)
-
-            # Show data preview
-            with st.expander("📋 View Resume Bank Data", expanded=False):
-                st.dataframe(df, use_container_width=True, height=400)
-
-            # Show sample candidates
-            st.markdown("### 👤 Sample Candidates")
-            for idx, row in df.head(3).iterrows():
-                st.markdown(f'<div class="candidate-card">', unsafe_allow_html=True)
-                st.markdown(f"**{row.get('name', 'N/A')}**")
-                st.caption(f"**Skills:** {row.get('skill_set', 'N/A')}")
-                st.caption(f"**Experience:** {row.get('exp_years', 'N/A')} years | **Domain:** {row.get('domain', 'N/A')}")
-                st.markdown('</div>', unsafe_allow_html=True)
-
-            if len(df) > 3:
-                st.info(f"📋 Showing 3 of {len(df)} candidates")
-
+            # Show preview
+            with st.expander(f"📊 Preview ({len(df)} candidates)"):
+                st.dataframe(df.head(10), use_container_width=True, height=300)
         except Exception as e:
-            st.markdown(f"""
-                <div class="error-box">
-                    <strong>❌ Error loading Excel file</strong><br>
-                    {str(e)}
-                </div>
-            """, unsafe_allow_html=True)
-
-    elif st.session_state.resume_bank is not None:
-        df = st.session_state.resume_bank
-        st.markdown(f"""
-            <div class="success-box">
-                <strong>✅ Resume Bank Active</strong><br>
-                Candidates: <strong>{len(df)}</strong>
-            </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-            <div class="warning-box">
-                <strong>📂 No resume bank uploaded</strong><br>
-                Please upload an Excel file with candidate data to begin matching.
-            </div>
-        """, unsafe_allow_html=True)
+            st.error(f"❌ Error: {str(e)}")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================================================
-# MATCHING SECTION
+# MATCHING RESULTS - FULL WIDTH GRID
 # ============================================================================
-
-st.markdown("---")
-st.markdown("## 🎯 Candidate-Job Matching")
 
 if st.session_state.selected_job and st.session_state.resume_bank is not None:
-    job = st.session_state.selected_job
-    df = st.session_state.resume_bank
-
-    st.markdown(f"""
-        <div class="info-box">
-            <strong>🎯 Matching For:</strong> {job['title']} ({job['department']})<br>
-            <strong>👥 Against:</strong> {len(df)} candidates from resume bank
-        </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([2, 1, 1])
-
-    with col1:
-        match_button = st.button("🚀 Start Matching Process", type="primary", use_container_width=True)
-
-    with col2:
-        top_n = st.number_input("Top N Matches", min_value=1, max_value=len(df), value=min(5, len(df)))
-
-    with col3:
-        if st.button("🗑️ Clear Selection", use_container_width=True):
-            st.session_state.selected_job = None
-            st.session_state.matching_results = []
-            st.rerun()
-
-    if match_button:
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-
-        # Try to use LangSmith, fallback to local
-        langsmith_client = get_langsmith_client_cached()
-        use_langsmith = langsmith_client is not None
-
-        if use_langsmith:
-            st.info("🚀 Using deployed LangSmith workflow for matching")
-        else:
-            st.info("💻 Using local AI workflow for matching")
-            llm = get_llm(temperature=0.1)
-
-        matches = []
-
-        for idx, row in df.iterrows():
-            progress = int(((idx + 1) / len(df)) * 100)
-            progress_bar.progress(progress / 100)
-            status_text.markdown(f"**🤖 Matching {idx+1}/{len(df)}:** {row.get('name', 'Unknown')}")
-
-            try:
-                candidate = row.to_dict()
-
-                # Use LangSmith if available, otherwise local
-                if use_langsmith:
-                    result = match_candidate_to_job_langsmith(langsmith_client, candidate, job)
-                    # LangSmith returns direct match data
-                    match_info = result
-                    match_info["candidate"] = candidate
-                    matches.append(match_info)
-                else:
-                    result = match_candidate_to_job_simple(llm, candidate, job)
-                    if result["success"]:
-                        match_info = result["match_data"]
-                        match_info["candidate"] = candidate
-                        matches.append(match_info)
-                    else:
-                        st.warning(f"⚠️ Failed to match {row.get('name', 'Unknown')}: {result['error']}")
-
-            except Exception as e:
-                st.error(f"❌ Error matching {row.get('name', 'Unknown')}: {str(e)}")
-
-        progress_bar.empty()
-        status_text.empty()
-
-        # Sort by match score
-        matches.sort(key=lambda x: x["match_score"], reverse=True)
-
-        # Store in session state
-        st.session_state.matching_results = matches
-
-        st.markdown(f"""
-            <div class="success-box">
-                <strong>✅ Matching Complete!</strong><br>
-                Successfully matched {len(matches)} candidates
-            </div>
-        """, unsafe_allow_html=True)
-        st.balloons()
-
-# ============================================================================
-# DISPLAY MATCHING RESULTS
-# ============================================================================
-
-if st.session_state.matching_results:
     st.markdown("---")
-    st.markdown("## 📊 Matching Results")
+    st.markdown(f"### 🎯 Matching Results for: {st.session_state.selected_job['title']}")
 
-    matches = st.session_state.matching_results
-    top_matches = matches[:top_n] if 'top_n' in locals() else matches[:5]
+    # Run matching
+    if not st.session_state.matching_results or st.button("🔄 Refresh Matches"):
+        with st.spinner("🤖 AI is analyzing candidates..."):
+            llm = get_llm()
+            results = []
 
-    # Summary metrics
-    col1, col2, col3, col4 = st.columns(4)
+            for idx, candidate in st.session_state.resume_bank.iterrows():
+                try:
+                    result = match_candidate_to_job_simple(llm, candidate.to_dict(), st.session_state.selected_job)
+                    result['candidate'] = candidate.to_dict()
+                    results.append(result)
+                except Exception as e:
+                    st.error(f"Error matching {candidate.get('name', 'Unknown')}: {str(e)}")
 
-    with col1:
-        st.metric("Total Matches", len(matches))
-    with col2:
-        excellent = len([m for m in matches if m["match_score"] >= 85])
-        st.metric("Excellent Matches", excellent)
-    with col3:
-        good = len([m for m in matches if 70 <= m["match_score"] < 85])
-        st.metric("Good Matches", good)
-    with col4:
-        avg_score = sum(m["match_score"] for m in matches) / len(matches) if matches else 0
-        st.metric("Average Score", f"{avg_score:.1f}%")
+            st.session_state.matching_results = sorted(results, key=lambda x: x.get('match_score', 0), reverse=True)
 
-    # Display top matches
-    st.markdown(f"### 🏆 Top {len(top_matches)} Candidates")
+    # Separate matches by location compatibility
+    if st.session_state.matching_results:
+        job_location_type = st.session_state.selected_job.get('location_type', 'Remote')
 
-    for idx, match in enumerate(top_matches):
-        candidate = match["candidate"]
-        score = match["match_score"]
-        score_class = get_match_score_class(score)
-        level_text = get_match_level_text(score)
+        # Categorize results
+        good_location_matches = []
+        poor_location_matches = []
 
-        st.markdown(f'<div class="match-card">', unsafe_allow_html=True)
+        for result in st.session_state.matching_results:
+            candidate = result.get('candidate', {})
+            candidate_pref = candidate.get('location_preference', 'Flexible')
+            willing_relocate = str(candidate.get('willing_to_relocate', 'No')).lower() in ['yes', 'true', '1']
 
-        col1, col2 = st.columns([3, 1])
+            # Determine if location is a blocker
+            is_location_mismatch = False
+            if job_location_type == 'Onsite' and candidate_pref == 'Remote' and not willing_relocate:
+                is_location_mismatch = True
+            elif job_location_type == 'Remote' and candidate_pref == 'Onsite':
+                is_location_mismatch = True
+            elif job_location_type == 'Hybrid' and candidate_pref == 'Remote' and not willing_relocate:
+                is_location_mismatch = True
 
-        with col1:
-            st.markdown(f"### {idx+1}. {candidate.get('name', 'N/A')}")
-            st.markdown(f"**Skills:** {candidate.get('skill_set', 'N/A')}")
-            st.markdown(f"**Experience:** {candidate.get('exp_years', 'N/A')} years | **Domain:** {candidate.get('domain', 'N/A')}")
+            if is_location_mismatch:
+                poor_location_matches.append(result)
+            else:
+                good_location_matches.append(result)
 
-            if match.get("previous_roles"):
-                st.caption(f"**Previous Roles:** {candidate.get('previous_roles', 'N/A')}")
+        # Display good matches first
+        st.markdown(f"### ✅ Compatible Candidates ({len(good_location_matches)})")
+        st.markdown(f"<small>Location preference matches job requirements</small>", unsafe_allow_html=True)
 
-        with col2:
-            st.markdown(f'<div class="{score_class}">{score}%</div>', unsafe_allow_html=True)
-            st.caption(f"**{level_text}**")
-            st.caption(f"**Recommendation:** {match.get('recommendation', 'N/A').upper()}")
+        st.markdown('<div class="match-grid">', unsafe_allow_html=True)
 
-        # Show details
-        with st.expander(f"📋 View Detailed Analysis for {candidate.get('name', 'N/A')}"):
-            col1, col2 = st.columns(2)
+        for result in good_location_matches:
+            candidate = result.get('candidate', {})
+            score = result.get('match_score', 0)
+            recommendation = result.get('recommendation', 'REVIEW')
+            strengths = result.get('strengths', [])
+            gaps = result.get('gaps', [])
 
-            with col1:
-                st.markdown("**✅ Strengths:**")
-                for strength in match.get("strengths", []):
-                    st.markdown(f"• {strength}")
+            score_class = get_match_score_class(score)
+            rec_class = get_recommendation_class(recommendation)
 
-                st.markdown(f"\n**📊 Skill Match:** {match.get('skill_match_percentage', 0)}%")
+            st.markdown(f'''
+            <div class="match-card-grid">
+                <div class="match-score-badge {score_class}">{score}</div>
 
-            with col2:
-                st.markdown("**⚠️ Gaps:**")
-                gaps = match.get("gaps", [])
-                if gaps:
-                    for gap in gaps:
-                        st.markdown(f"• {gap}")
-                else:
-                    st.markdown("• No significant gaps")
+                <div class="candidate-name">{candidate.get('name', 'Unknown')}</div>
+                <div class="candidate-meta">
+                    {candidate.get('domain', 'N/A')} • {candidate.get('exp_years', 'N/A')} years
+                    <br>
+                    <span class="location-badge">{candidate.get('location_preference', 'Flexible')}</span>
+                    <span class="location-badge">{candidate.get('location', 'N/A')}</span>
+                </div>
 
-            st.markdown("**🎯 Experience Assessment:**")
-            st.info(match.get("experience_assessment", "N/A"))
+                <div class="match-strengths">
+                    <strong>✅ Strengths:</strong><br>
+                    {"<br>".join([f"• {s}" for s in strengths[:3]])}
+                </div>
 
-            st.markdown("**💡 Reasoning:**")
-            st.write(match.get("reasoning", "N/A"))
+                {f'<div class="match-gaps"><strong>⚠️ Gaps:</strong><br>{"<br>".join([f"• {g}" for g in gaps[:2]])}</div>' if gaps else ''}
+
+                <div class="rec-badge {rec_class}">{recommendation}</div>
+            </div>
+            ''', unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Export results
-    st.markdown("---")
-    st.markdown("### 📥 Export Results")
+        # Display poor location matches (hidden by default)
+        if poor_location_matches:
+            st.markdown("---")
 
-    # Prepare export data
-    export_data = []
-    for match in matches:
-        candidate = match["candidate"]
-        export_data.append({
-            "Rank": matches.index(match) + 1,
-            "Candidate Name": candidate.get('name', 'N/A'),
-            "Match Score": match["match_score"],
-            "Match Level": match["match_level"],
-            "Recommendation": match["recommendation"],
-            "Skills": candidate.get('skill_set', 'N/A'),
-            "Experience (Years)": candidate.get('exp_years', 'N/A'),
-            "Domain": candidate.get('domain', 'N/A'),
-            "Skill Match %": match.get('skill_match_percentage', 0),
-            "Strengths": "; ".join(match.get("strengths", [])),
-            "Gaps": "; ".join(match.get("gaps", [])),
-            "Reasoning": match.get("reasoning", "N/A")
-        })
+            with st.expander(f"⚠️ Location Mismatch Candidates ({len(poor_location_matches)}) - Click to View", expanded=False):
+                st.markdown(f"""
+                <div style="background: #fee2e2; padding: 1rem; border-radius: 8px; border-left: 4px solid #dc2626; margin-bottom: 1rem;">
+                    <strong>⚠️ Location Compatibility Warning</strong><br>
+                    These candidates have <strong>location preference mismatch</strong> with the job requirements:<br>
+                    • Job requires: <strong>{job_location_type}</strong><br>
+                    • These candidates prefer different work arrangements<br>
+                    • Skills may be strong, but location could be a deal-breaker<br>
+                    • Consider only if exceptional and willing to negotiate
+                </div>
+                """, unsafe_allow_html=True)
 
-    export_df = pd.DataFrame(export_data)
+                st.markdown('<div class="match-grid">', unsafe_allow_html=True)
 
-    # Excel export
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        export_df.to_excel(writer, index=False, sheet_name='Matching Results')
+                for result in poor_location_matches:
+                    candidate = result.get('candidate', {})
+                    score = result.get('match_score', 0)
+                    recommendation = result.get('recommendation', 'REVIEW')
+                    strengths = result.get('strengths', [])
+                    gaps = result.get('gaps', [])
 
-    st.download_button(
-        label="📊 Download Matching Results (Excel)",
-        data=output.getvalue(),
-        file_name=f"matching_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.document",
-        use_container_width=True
-    )
+                    candidate_pref = candidate.get('location_preference', 'Flexible')
+                    willing_relocate = str(candidate.get('willing_to_relocate', 'No')).lower() in ['yes', 'true', '1']
 
-elif st.session_state.selected_job and st.session_state.resume_bank is None:
-    st.markdown("""
-        <div class="warning-box">
-            <strong>⚠️ Resume Bank Required</strong><br>
-            Please upload a resume bank Excel file in the right panel to start matching.
-        </div>
-    """, unsafe_allow_html=True)
+                    # Force score to show location penalty
+                    score_class = "score-poor"  # Always show as poor due to location
+                    rec_class = "rec-reject"
 
-elif not st.session_state.selected_job and st.session_state.resume_bank is not None:
-    st.markdown("""
-        <div class="info-box">
-            <strong>💡 Ready to Match</strong><br>
-            Select a job position from the left panel and click "Match Candidates" to begin.
-        </div>
-    """, unsafe_allow_html=True)
+                    st.markdown(f'''
+                    <div class="match-card-grid" style="border: 2px solid #dc2626; opacity: 0.85;">
+                        <div class="match-score-badge {score_class}" style="background: #dc2626;">{score}
+                            <div style="font-size: 0.6rem; margin-top: 0.25rem;">⚠️ LOC</div>
+                        </div>
 
-else:
-    st.markdown("""
-        <div class="info-box">
-            <strong>🚀 Get Started</strong><br>
-            1. Add job positions in the left panel<br>
-            2. Upload your resume bank (Excel) in the right panel<br>
-            3. Select a job and click "Match Candidates"
-        </div>
-    """, unsafe_allow_html=True)
+                        <div class="candidate-name">{candidate.get('name', 'Unknown')}</div>
+                        <div class="candidate-meta">
+                            {candidate.get('domain', 'N/A')} • {candidate.get('exp_years', 'N/A')} years
+                            <br>
+                            <span class="location-badge" style="background: #fee2e2; color: #7f1d1d; border: 1px solid #dc2626;">
+                                ❌ Prefers: {candidate_pref}
+                            </span>
+                            <span class="location-badge">{candidate.get('location', 'N/A')}</span>
+                        </div>
 
-# ============================================================================
-# FOOTER
-# ============================================================================
+                        <div style="background: #fee2e2; padding: 0.5rem; border-radius: 4px; border-left: 3px solid #dc2626; margin: 0.5rem 0; font-size: 0.8rem;">
+                            <strong>🚫 Location Mismatch:</strong><br>
+                            Job needs <strong>{job_location_type}</strong>, candidate wants <strong>{candidate_pref}</strong>
+                            {f'<br>✅ Willing to relocate' if willing_relocate else '<br>❌ Not willing to relocate'}
+                        </div>
 
-st.markdown("---")
-st.markdown("""
-    <div style="text-align: center; color: #64748b; padding: 2rem 0;">
-        <p style="margin: 0; font-size: 1rem; font-weight: 600;">
-            <span style="color: #5e60ce;">M</span><span style="color: #6930c3;">H</span><span style="color: #ff6b35;">K</span> TECH INC
-        </p>
-        <p style="margin: 0.5rem 0; font-size: 0.9rem;">AI-Powered Recruitment Platform</p>
-        <p style="margin: 0; font-size: 0.85rem;">Powered by Claude AI | Built with LangChain & Streamlit</p>
-    </div>
-""", unsafe_allow_html=True)
+                        <div class="match-strengths">
+                            <strong>✅ Skills Match:</strong><br>
+                            {"<br>".join([f"• {s}" for s in strengths[:3]])}
+                        </div>
+
+                        {f'<div class="match-gaps"><strong>⚠️ Additional Gaps:</strong><br>{"<br>".join([f"• {g}" for g in gaps[:2]])}</div>' if gaps else ''}
+
+                        <div class="rec-badge {rec_class}">LOCATION MISMATCH</div>
+                    </div>
+                    ''', unsafe_allow_html=True)
+
+                st.markdown('</div>', unsafe_allow_html=True)
+
+                st.markdown(f"""
+                <div style="background: #fef3c7; padding: 0.75rem; border-radius: 6px; border-left: 3px solid #f59e0b; margin-top: 1rem; font-size: 0.85rem;">
+                    <strong>💡 Recommendation:</strong> These {len(poor_location_matches)} candidates have <strong>location incompatibility</strong>.
+                    While their skills may be strong, the location mismatch significantly reduces the likelihood of a successful hire.
+                    Consider them only if they're exceptional and you can negotiate work arrangements.
+                </div>
+                """, unsafe_allow_html=True)
+
+        # Export Button
+        if st.button("📥 Export Results to Excel"):
+            export_data = []
+            for result in st.session_state.matching_results:
+                candidate = result.get('candidate', {})
+                export_data.append({
+                    'Name': candidate.get('name'),
+                    'Score': result.get('match_score'),
+                    'Recommendation': result.get('recommendation'),
+                    'Experience': candidate.get('exp_years'),
+                    'Domain': candidate.get('domain'),
+                    'Strengths': '; '.join(result.get('strengths', [])),
+                    'Gaps': '; '.join(result.get('gaps', []))
+                })
+
+            df_export = pd.DataFrame(export_data)
+            output = BytesIO()
+            df_export.to_excel(output, index=False)
+            output.seek(0)
+
+            st.download_button(
+                label="⬇️ Download Excel",
+                data=output,
+                file_name=f"matches_{st.session_state.selected_job['title']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
